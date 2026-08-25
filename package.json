@@ -2,9 +2,5 @@
   "name": "@tars/security",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
-  "exports": {
-    "./kdf": "./kdf.ts",
-    "./bytes": "./bytes.ts"
-  }
+  "type": "module"
 }

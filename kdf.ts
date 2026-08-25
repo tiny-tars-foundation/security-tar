@@ -18,11 +18,7 @@
 // `SubtleCrypto` is passed in rather than reached for. That also makes the parameters testable
 // without a runtime shim.
 
-// Self-referencing specifier rather than "./bytes": this package is loaded three ways — bundled by
-// Vite, bundled by Wrangler, and imported raw by Node (vite.config.ts reaches src/lib/crypto.ts, which
-// lands here). Node's ESM loader will not add an extension, so the relative form resolves only in the
-// bundlers. The package's own exports map has the extension, so this form resolves in all three.
-import { toArrayBuffer } from "@tars/security/bytes";
+import { toArrayBuffer } from "./bytes";
 
 /**
  * OWASP's floor for PBKDF2-SHA256 at the time this was set. Raising it is a compatibility decision,
