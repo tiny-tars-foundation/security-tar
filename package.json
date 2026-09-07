@@ -1,6 +1,20 @@
 {
   "name": "@tars/security",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module"
+  "version": "0.1.0",
+  "description": "Runtime-agnostic key derivation, authenticated envelope encryption, and storage-agnostic access-control contracts for per-user encrypted data.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tiny-tars-foundation/security-tar"
+  },
+  "homepage": "https://github.com/tiny-tars-foundation/security-tar",
+  "bugs": "https://github.com/tiny-tars-foundation/security-tar/issues",
+  "keywords": [
+    "encryption",
+    "webcrypto",
+    "envelope-encryption",
+    "access-control",
+    "key-derivation"
+  ]
 }
