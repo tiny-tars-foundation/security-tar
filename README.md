@@ -9,9 +9,37 @@ Built for and extracted from a health-records app that needed patient-controlled
 revocable provider access; published because the primitives don't have anything health-specific
 in them. Maintained by the [Tiny Tars Foundation](https://tinytars.foundation), a 501(c)(3).
 
-**Read `THREAT_MODEL.md` before you adopt this.** It documents what's in scope, what isn't, and
-two deliberate design tradeoffs (extractable keys, no forward secrecy on revoke) that look like
-bugs if you haven't read them first.
+## Why
+
+**It's a good fit for a HIPAA-adjacent app because the pattern such an app needs is exactly what
+ships here, not something you'd assemble from parts.** `crypto.ts` gives you a zero-knowledge
+vault — the storage operator holds ciphertext and never a key or usable plaintext. `envelope-
+access.ts` gives you consent-based sharing — access to a vault is a per-principal, revocable
+wrapped-key grant, not a shared secret or a role flag. `break-glass.ts` gives you the third piece
+that's easy to get wrong by hand: a time-boxed grant with the TTL clamp, self-expiry, and audit
+trail built in, so "temporary access" is actually temporary instead of a support ticket someone
+forgets to close. Put together, that's the "encrypted vault + consent-based sharing + time-boxed
+break-glass access" shape any HIPAA-adjacent app ends up needing — and this package ships all
+three, not a subset with the rest left as an exercise. None of that makes the package itself
+HIPAA-compliant; it's a primitive an adopter builds compliant handling on top of, not a compliance
+product in its own right.
+
+**None of it is actually health-specific, though.** The storage contracts in `stores.ts` are
+generic data-access interfaces; the payload `crypto.ts` encrypts is an arbitrary JSON value, not a
+medical-record shape. Even `ProviderLinkStore`'s "provider"/"patient" field names are just this
+package's first adopter's vocabulary — `ARCHITECTURE.md` says to read it generically as "grantee
+linked to vault owner," and nothing in the access-policy logic cares what a principal represents.
+The same three pieces above fit a client's encrypted files shared with revocable access for
+outside counsel, or a household's financial records shared temporarily with an accountant at tax
+time — any case with an owner, a resource only they can decrypt by default, and a need to grant
+and later cut off someone else's access to it.
+
+Claims like these are only worth as much as the threat model backing them. **Read
+`THREAT_MODEL.md` before you adopt this** — it documents what's in scope, what isn't, and two
+deliberate design tradeoffs (extractable keys, no forward secrecy on revoke) that look like bugs
+if you haven't read them first. Notice, while you're there, that it's written in fully generic
+terms too — no "patient," no "provider," no health-specific language anywhere in it. That's not
+an oversight; it's the same evidence the featureset argument above rests on, stated a second way.
 
 ## Install
 
