@@ -187,6 +187,31 @@ key rotation *possible* also means old access isn't retroactively erased just by
 grant row). Forward secrecy on revoke requires DEK rotation, which this package does not yet
 implement. See `THREAT_MODEL.md`.
 
+## Time-boxed access grants (`break-glass.ts`)
+
+Three functions — `grantBreakGlass`, `checkBreakGlass`, `revokeBreakGlass` — implement the
+"temporary access, then it lapses or is pulled" pattern on top of `ProviderLinkStore` and
+`AuditStore` (and `EnvelopeStore`, when the grant carries an envelope):
+
+1. **Grant.** Validates the caller owns the pending link being approved, clamps the requested TTL
+   to a caller-supplied `BreakGlassPolicy` (`defaultTtlHours`/`maxTtlHours`), stamps a
+   caller-prefixed consent ref, optionally writes an envelope (only when the grant is
+   vault-backed — a metadata-only grant carries none), flips the link active, and audits.
+2. **Check.** Same non-lazy-expiry principle as `resolveEnvelopeAccess` above: a route calls this
+   on every use rather than trusting the link's `status` alone. Past `expiresAt`, it runs the
+   caller's `onExpire` cleanup (typically: delete the envelope, flag DEK-rotation-pending), then
+   self-revokes the link and audits the expiry — so a grantee who never triggers a "check" route
+   can't outlive their TTL by simply not hitting that route.
+3. **Revoke.** Ends a link early from either side, idempotently: deletes the envelope (if any) and
+   marks the link revoked, both safe to repeat. Auditing is conditional on `auditAction` being
+   supplied — some link kinds (e.g. a clinician link) carry no disclosure-audit obligation.
+
+All three are storage-agnostic — they take `Pick<...>` slices of `ProviderLinkStore`/
+`AuditStore`/`EnvelopeStore`, never a concrete adapter — and carry the same envelope-revocation
+caveat as `envelope-access.ts`'s "Known limitation" above: revoking or expiring a grant stops the
+*next* read, not a DEK the grantee already unwrapped. See `THREAT_MODEL.md`'s "No forward secrecy
+on revoke" section, which applies here without modification.
+
 ## Adapters
 
 No storage adapter ships in this repository yet. `stores.ts` is designed so a Cloudflare D1

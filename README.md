@@ -134,6 +134,7 @@ is entirely your own auth middleware's job. See `THREAT_MODEL.md`'s "trust bound
 | `vault-sink.ts` | `VaultSink` interface + a conflict-safe (ETag/If-Match) HTTP `PUT` implementation for saving an encrypted blob |
 | `stores.ts` | Five storage-agnostic contracts: `AccountStore`, `CredentialStore`, `EnvelopeStore`, `ProviderLinkStore`, `AuditStore` |
 | `envelope-access.ts` | `resolveEnvelopeAccess` — the one composed access-policy function built on `stores.ts` |
+| `break-glass.ts` | `grantBreakGlass`/`checkBreakGlass`/`revokeBreakGlass` — time-boxed grants: TTL clamp, expiry self-revoke, idempotent revoke, all audited |
 
 Full design, including the exact envelope byte layout and why extractable keys are a deliberate
 choice: `ARCHITECTURE.md`. Adapters (D1, R2, a plain HTTP adapter) are a tracked follow-up, not
@@ -149,7 +150,7 @@ data durability depends on.
 
 ```
 npm install
-npm test        # vitest, 48 tests across 6 files, real WebCrypto — no mocked crypto
+npm test        # vitest, 57 tests across 7 files, real WebCrypto — no mocked crypto
 npm run typecheck
 ```
 

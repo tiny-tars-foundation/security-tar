@@ -26,12 +26,16 @@ version; no prior published releases.
   `EnvelopeStore`, `ProviderLinkStore`, `AuditStore`.
 - `envelope-access.ts` — `resolveEnvelopeAccess`, the composed access-policy function over
   `EnvelopeStore` + `ProviderLinkStore`.
+- `break-glass.ts` — `grantBreakGlass`/`checkBreakGlass`/`revokeBreakGlass`: time-boxed access
+  grants over `ProviderLinkStore`/`AuditStore`/`EnvelopeStore` — TTL clamp to a policy max,
+  expiry that self-revokes and audits, idempotent revoke.
 - `LICENSE` (MIT), `THREAT_MODEL.md`, `SECURITY.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`.
-- `tests/` — a vitest suite (48 tests across 6 files) covering every module above: KDF
+- `tests/` — a vitest suite (57 tests across 7 files) covering every module above: KDF
   determinism and parameters, both envelope format versions and their cross-rejection, KEK
   wrapping from a password and from a passkey PRF secret, the key-store non-extractability
   guarantee, `vault-sink`'s conflict/serialization behavior, `bytes.ts`'s `byteOffset` handling,
-  and `resolveEnvelopeAccess`'s owner/org-recovery/provider-link decision paths.
+  `resolveEnvelopeAccess`'s owner/org-recovery/provider-link decision paths, and
+  `break-glass.ts`'s TTL-clamp/expiry/idempotent-revoke logic.
 
 ### Known gaps (tracked, not blocking this release)
 
