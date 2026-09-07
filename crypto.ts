@@ -1,6 +1,5 @@
-import type { Vault } from "./types";
-import { toArrayBuffer as toAB } from "../../../../packages/security/bytes";
-import { deriveAesKey, deriveBits, IV_LEN, SALT_LEN } from "../../../../packages/security/kdf";
+import { toArrayBuffer as toAB } from "./bytes";
+import { deriveAesKey, deriveBits, IV_LEN, SALT_LEN } from "./kdf";
 
 // HD1 is this app's own envelope and stays here. Only the derivation is shared with the QBO vault's
 // EB1 — see the header of @tars/security/kdf for why the two formats must NOT be merged.
@@ -26,7 +25,7 @@ export async function deriveBearerToken(passphrase: string): Promise<string> {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export async function encryptVault<T = Vault>(data: T, passphrase: string): Promise<Uint8Array> {
+export async function encryptVault<T = Record<string, unknown>>(data: T, passphrase: string): Promise<Uint8Array> {
   const salt = globalThis.crypto.getRandomValues(new Uint8Array(SALT_LEN));
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(IV_LEN));
   const key = await deriveKey(passphrase, salt);
@@ -44,7 +43,7 @@ export async function encryptVault<T = Vault>(data: T, passphrase: string): Prom
   return out;
 }
 
-export async function decryptVault<T = Vault>(blob: Uint8Array, passphrase: string): Promise<T> {
+export async function decryptVault<T = Record<string, unknown>>(blob: Uint8Array, passphrase: string): Promise<T> {
   if (blob.length < MAGIC.length + 1 + SALT_LEN + IV_LEN) {
     throw new Error("blob too short");
   }
@@ -242,7 +241,7 @@ export async function unwrapDEKWithKek(blob: Uint8Array, kek: CryptoKey): Promis
 
 // HD1 v2 blob: magic(3) + version=2(1) + vaultKeyId(16) + iv(12) + AES-GCM(DEK, JSON).
 // Header = 32 B, equal to v1, so the Functions' MIN_BYTES=32 + magic checks stay valid.
-export async function encryptVaultV2<T = Vault>(data: T, dek: CryptoKey): Promise<Uint8Array> {
+export async function encryptVaultV2<T = Record<string, unknown>>(data: T, dek: CryptoKey): Promise<Uint8Array> {
   const vaultKeyId = globalThis.crypto.getRandomValues(new Uint8Array(KEYID_LEN));
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(IV_LEN));
   const plaintext = enc.encode(JSON.stringify(data));
@@ -257,7 +256,7 @@ export async function encryptVaultV2<T = Vault>(data: T, dek: CryptoKey): Promis
   return out;
 }
 
-export async function decryptVaultV2<T = Vault>(blob: Uint8Array, dek: CryptoKey): Promise<T> {
+export async function decryptVaultV2<T = Record<string, unknown>>(blob: Uint8Array, dek: CryptoKey): Promise<T> {
   const header = MAGIC.length + 1 + KEYID_LEN + IV_LEN;
   if (blob.length < header) throw new Error("blob too short");
   for (let i = 0; i < MAGIC.length; i++) if (blob[i] !== MAGIC[i]) throw new Error("not an HD1 blob");

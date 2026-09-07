@@ -1,4 +1,3 @@
-import type { Vault } from "./types";
 import { encryptVaultV2 } from "./crypto";
 
 // A VaultSink persists an already-encrypted vault blob under a vault id. The
@@ -142,7 +141,7 @@ export const vaultSink: VaultSink = import.meta.env.DEV ? localSink : r2Sink;
 
 // W44 — encrypt the vault under its DEK (HD1 v2 envelope) and persist. The DEK is the vault's
 // random data key, unwrapped at login from the caller's key envelope; it stays in memory.
-export async function saveVaultV2(vault: Vault, id: string, dek: CryptoKey, sink: VaultSink): Promise<void> {
+export async function saveVaultV2<T = Record<string, unknown>>(vault: T, id: string, dek: CryptoKey, sink: VaultSink): Promise<void> {
   const blob = await encryptVaultV2(vault, dek);
   await sink.put(id, blob);
 }
