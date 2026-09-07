@@ -98,6 +98,15 @@ holder needs to be able to re-wrap a DEK for a newly added principal, or re-wrap
 under a new KEK when a login method is added. This is the same trust boundary as holding a
 session DEK in memory at all — see `THREAT_MODEL.md`.
 
+## Byte handling (`bytes.ts`)
+
+One function, `toArrayBuffer(view: Uint8Array): ArrayBuffer`. `SubtleCrypto` takes a
+`BufferSource`, and a `Uint8Array` is only safely interchangeable with its own `.buffer` when it
+spans the whole thing — a view produced by `.slice()` or `.subarray()` on a larger buffer carries
+a non-zero `byteOffset`, and passing `view.buffer` there silently operates on the wrong bytes
+instead of failing. Every WebCrypto call in `kdf.ts` and `crypto.ts` goes through this function
+rather than a per-call-site cast.
+
 ## Browser key persistence (`key-store.ts`)
 
 The only browser-specific module in this package (everything else is runtime-agnostic). Persists
@@ -106,6 +115,33 @@ an account's unwrapped ECDH private key in IndexedDB as a **non-extractable**, s
 to *use* the key — sign, derive, unwrap — but cannot ask the browser to hand back the raw key
 bytes. This narrows what an XSS foothold can do with the persisted key without eliminating it;
 see `THREAT_MODEL.md` for the boundary this actually draws.
+
+## Conflict-safe blob persistence (`vault-sink.ts`)
+
+`VaultSink` is a one-method interface — `put(id, blob): Promise<void>` — for persisting an
+already-encrypted blob. The encryption boundary stays with the caller: a sink stores opaque
+ciphertext and never sees plaintext or a key.
+
+The reusable part of this module is optimistic-concurrency bookkeeping around that interface:
+
+- `rememberVaultEtag`/`knownVaultEtag` track, per vault ID, the last version this context saw.
+- The exported `r2Sink` implementation sends `If-Match: <known-etag>` when a version is known, or
+  `If-None-Match: *` when it isn't — "replace exactly this version" or "create, and refuse if one
+  already exists," never neither, so a server-side precondition check can't be silently skipped.
+- A `409`/`412`-class rejection throws a typed `VaultConflictError` carrying the server's current
+  ETag, distinguishable from an ordinary failure (a network error, a `5xx`) so a caller can react
+  to "someone else edited this" differently from "the request failed." `setVaultConflictHandler`
+  gives one hook that sees every conflict across every call site, rather than requiring each
+  caller to wire its own handling.
+- Writes to the same vault ID are serialized through an internal promise chain, so two saves to
+  the same vault from the same browser context never race each other and report a spurious
+  conflict against themselves.
+
+`localSink` and the concrete `r2Sink` request (`/api/vault/{id}`, `/__save-vault`) are wired to
+this package's originating application's own Pages Functions routes — they're included as a
+working reference implementation, not something a new adopter imports and uses verbatim unless
+their own routes happen to match. Implement `VaultSink` against your own endpoint and reuse the
+etag-tracking/conflict-typing/serialization logic above it.
 
 ## Storage contracts (`stores.ts`)
 

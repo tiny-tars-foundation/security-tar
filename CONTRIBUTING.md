@@ -13,8 +13,8 @@ decided not to solve at this layer.
 Every consumer's already-encrypted data depends on `kdf.ts`'s parameters and each envelope
 format's byte layout staying stable, or on version bytes correctly distinguishing old data from
 new. **A PR touching `kdf.ts`, or the `HD1`/DEK envelope framing in `crypto.ts`, must add a new
-case to `shared-kdf.test.ts` (or the relevant envelope test file) demonstrating the change is
-either backward-compatible or correctly version-gated.** A PR without that test case will be
+case to `tests/kdf.test.ts` (or `tests/crypto.test.ts` for envelope framing) demonstrating the
+change is either backward-compatible or correctly version-gated.** A PR without that test case will be
 asked to add one before merge, no exceptions — this is the one place in the package where "it
 passed the existing tests" isn't sufficient, because the existing tests were written before your
 change and can't know to check for it.

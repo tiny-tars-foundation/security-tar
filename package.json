@@ -1,6 +1,7 @@
 {
   "name": "@tars/security",
   "version": "0.1.0",
+  "private": true,
   "description": "Runtime-agnostic key derivation, authenticated envelope encryption, and storage-agnostic access-control contracts for per-user encrypted data.",
   "license": "MIT",
   "type": "module",
@@ -16,5 +17,22 @@
     "envelope-encryption",
     "access-control",
     "key-derivation"
-  ]
+  ],
+  "exports": {
+    "./crypto": "./crypto.ts",
+    "./kdf": "./kdf.ts",
+    "./bytes": "./bytes.ts",
+    "./key-store": "./key-store.ts",
+    "./vault-sink": "./vault-sink.ts",
+    "./stores": "./stores.ts",
+    "./envelope-access": "./envelope-access.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.8",
+    "typescript": "~6.0.2"
+  }
 }
