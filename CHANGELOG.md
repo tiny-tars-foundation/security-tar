@@ -5,6 +5,27 @@ semver, but is pre-1.0 — expect breaking changes between minor versions until 
 
 ## [Unreleased]
 
+### Added
+
+- `blob-store.ts` — `BlobStore`, a generic conditional-write interface for storing an opaque
+  encrypted blob by key. Server-side counterpart to `vault-sink.ts`'s browser-side `VaultSink`.
+- `adapters/d1/` — `D1AccountStore`/`D1CredentialStore`/`D1EnvelopeStore`/`D1ProviderLinkStore`/
+  `D1AuditStore`, a Cloudflare D1 implementation of all five `stores.ts` contracts.
+- `adapters/r2.ts` — `R2BlobStore`, a Cloudflare R2 implementation of `BlobStore`.
+- `adapters/memory.ts` — full in-memory implementations of all five `stores.ts` contracts, proven
+  against the D1 adapter via a shared contract suite — the actual evidence "storage-agnostic"
+  holds, not an assertion made by interface shape alone.
+- `adapters/pages-http.ts` — `pagesHandler()`, wrapping a portable
+  `(request, deps) => Promise<Response>` handler into Cloudflare Pages Functions' `onRequestX`
+  shape.
+- `adapters/conformance.ts` — shared vitest contract suites, one per `stores.ts` interface, run
+  against `adapters/memory` here (`tests/adapters-memory.test.ts`) and against `adapters/d1` in an
+  adopter's own Miniflare-backed suite.
+- `tests/blob-store.test.ts` — pins `R2BlobStore`'s conditional-mapping logic against a
+  hand-written fake R2 bucket.
+
+See `ARCHITECTURE.md`'s "Adapters" section for what each one is for and what it doesn't cover.
+
 ## [0.1.0] — Initial public release
 
 Extracted from a health-records application's internal `packages/security`. First public
@@ -39,6 +60,14 @@ version; no prior published releases.
 
 ### Known gaps (tracked, not blocking this release)
 
-- No published storage adapters yet (D1, R2, plain HTTP) — see `ARCHITECTURE.md`'s "Adapters"
-  section.
 - No forward secrecy on revoke — see `THREAT_MODEL.md`.
+
+### Known gaps as of the Unreleased adapters above
+
+- The D1/R2 adapters' real conditional-write/transaction semantics are verified against real
+  `workerd` only in a Cloudflare-hosted adopter's own test suite, not in this package's `npm
+  test` — `tests/blob-store.test.ts` here pins the mapping logic against a fake bucket, not real
+  R2 behavior.
+- No client-side, presigned-URL direct-to-storage sink (a browser-side sibling to `vault-sink.ts`'s
+  `VaultSink`, writing straight to S3/R2 instead of through an HTTP `PUT` endpoint) — left as
+  future work; see `ARCHITECTURE.md`'s "Adapters" section.

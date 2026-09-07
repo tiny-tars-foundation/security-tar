@@ -214,8 +214,47 @@ on revoke" section, which applies here without modification.
 
 ## Adapters
 
-No storage adapter ships in this repository yet. `stores.ts` is designed so a Cloudflare D1
-adapter, an R2 blob adapter for large envelopes, and a plain HTTP/Pages Functions adapter can each
-live as a subpath export (`@tars/security/adapters/d1`, etc.) without pulling Cloudflare-specific
-types into the core package. That work is tracked as a near-term follow-up, not bundled into this
-initial release — see the repository's issue tracker.
+Five adapters ship, each as its own subpath export, none of them imported by the core package
+files above — `crypto.ts`, `kdf.ts`, `bytes.ts`, `key-store.ts`, `vault-sink.ts`, `stores.ts`,
+`envelope-access.ts`, and `break-glass.ts` have zero Cloudflare (or any other platform) imports.
+An adopter that never touches `@tars/security/adapters/*` never links against Cloudflare's types
+at all — that's the actual mechanism behind "platform-independent," not just a claim about intent.
+
+- **`adapters/d1`** — `D1AccountStore`/`D1CredentialStore`/`D1EnvelopeStore`/`D1ProviderLinkStore`/
+  `D1AuditStore`, a Cloudflare D1 (SQLite) implementation of all five `stores.ts` contracts. One
+  file per interface, plus `types.ts` for the structural `D1Database` type this package declares
+  itself rather than depending on `@cloudflare/workers-types` for.
+- **`adapters/r2`** — `R2BlobStore`, a Cloudflare R2 implementation of `blob-store.ts`'s `BlobStore`
+  interface. Maps `BlobStore`'s `{ifMatch, ifNoneMatch}` conditional onto R2's own
+  `onlyIf.{etagMatches,etagDoesNotMatch}` shape; null-on-failed-precondition, not a throw, matching
+  R2's observed contract (see `tests/blob-store.test.ts`'s fake bucket, and an adopter's own
+  workerd-level conditional-write tests for the real thing).
+- **`adapters/memory`** — full in-memory implementations of all five `stores.ts` contracts. This
+  is the portability proof, not a toy: `adapters/conformance.ts`'s contract suites run against
+  both this adapter and `adapters/d1` (in an adopter's own test suite, since Miniflare/`workerd`
+  isn't a dependency of this package) and pass identically. A Cloudflare-free adopter can depend on
+  this adapter directly, or write their own against the same `stores.ts` interfaces and reuse the
+  same conformance suite to prove it.
+- **`adapters/pages-http`** — `pagesHandler()`, a five-line wrapper turning a portable
+  `(request, deps) => Promise<Response>` handler into Cloudflare Pages Functions'
+  `onRequestX({request, env, params})` shape. The handler itself — the actual route logic — takes
+  no Cloudflare types; only the thin wrapper does. This is the HTTP-layer half of platform
+  independence: business logic stays portable, only the last mile adapts to the host's routing
+  convention.
+- **`adapters/conformance`** — shared vitest contract suites, one exported function per `stores.ts`
+  interface (create/read/update roundtrip plus the documented null/not-found cases). Each takes a
+  factory and can be pointed at any adapter; see `tests/adapters-memory.test.ts` in this repo for
+  the pattern.
+
+**Trust boundary per adapter**: each adapter is only as trustworthy as its backing platform's own
+guarantees — `THREAT_MODEL.md` covers what this package's crypto and access-policy layers do and
+don't protect against, but a D1/R2 adapter's data durability and conditional-write atomicity are
+Cloudflare's guarantees, not this package's. Swapping to the memory adapter (or your own) swaps
+that trust boundary too; read `THREAT_MODEL.md`'s own framing before assuming any adapter is a
+drop-in security equivalent of another.
+
+**Known gaps, not silently dropped**: a client-side, presigned-URL direct-to-storage sink (a
+sibling to `vault-sink.ts`'s HTTP-`PUT` `VaultSink`, but writing straight to S3/R2 from the
+browser) is not built — see `CHANGELOG.md`. And these adapters' conditional-write/transaction
+semantics are verified against real D1/`workerd`/R2 only in an adopter's own test suite, not in
+this package's `npm test`, which deliberately carries no Miniflare dependency.

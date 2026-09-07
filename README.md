@@ -163,10 +163,18 @@ is entirely your own auth middleware's job. See `THREAT_MODEL.md`'s "trust bound
 | `stores.ts` | Five storage-agnostic contracts: `AccountStore`, `CredentialStore`, `EnvelopeStore`, `ProviderLinkStore`, `AuditStore` |
 | `envelope-access.ts` | `resolveEnvelopeAccess` — the one composed access-policy function built on `stores.ts` |
 | `break-glass.ts` | `grantBreakGlass`/`checkBreakGlass`/`revokeBreakGlass` — time-boxed grants: TTL clamp, expiry self-revoke, idempotent revoke, all audited |
+| `blob-store.ts` | `BlobStore` — a generic, conditional-write ("only if unchanged") interface for storing an opaque encrypted blob by key. Server-side counterpart to `vault-sink.ts`'s browser-side `VaultSink` |
+| `adapters/d1/` | `D1AccountStore`/`D1CredentialStore`/`D1EnvelopeStore`/`D1ProviderLinkStore`/`D1AuditStore` — a Cloudflare D1 implementation of all five `stores.ts` contracts |
+| `adapters/r2.ts` | `R2BlobStore` — a Cloudflare R2 implementation of `BlobStore` |
+| `adapters/memory.ts` | In-memory implementations of all five `stores.ts` contracts — the reference adapter that proves the interfaces are actually storage-agnostic, not just Cloudflare-shaped |
+| `adapters/pages-http.ts` | `pagesHandler()` — wraps a portable `(request, deps) => Promise<Response>` handler into Cloudflare Pages Functions' `onRequestX({request, env, params})` shape |
+| `adapters/conformance.ts` | Shared vitest contract suites for each `stores.ts` interface, run against every adapter above so "storage-agnostic" is proven, not asserted |
 
 Full design, including the exact envelope byte layout and why extractable keys are a deliberate
-choice: `ARCHITECTURE.md`. Adapters (D1, R2, a plain HTTP adapter) are a tracked follow-up, not
-yet published — see `ARCHITECTURE.md`'s "Adapters" section.
+choice: `ARCHITECTURE.md`. Adapters are optional subpath exports of this same package
+(`@tars/security/adapters/d1`, `/adapters/r2`, `/adapters/memory`, `/adapters/pages-http`) — see
+`ARCHITECTURE.md`'s "Adapters" section for what's shipped and what a Cloudflare-free adopter needs
+instead (the memory adapter, or one of your own against the same `stores.ts` contracts).
 
 ## Contributing
 
@@ -178,7 +186,7 @@ data durability depends on.
 
 ```
 npm install
-npm test        # vitest, 57 tests across 7 files, real WebCrypto — no mocked crypto
+npm test        # vitest, 85 tests across 9 files, real WebCrypto — no mocked crypto
 npm run typecheck
 ```
 

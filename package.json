@@ -26,7 +26,13 @@
     "./vault-sink": "./vault-sink.ts",
     "./stores": "./stores.ts",
     "./envelope-access": "./envelope-access.ts",
-    "./break-glass": "./break-glass.ts"
+    "./break-glass": "./break-glass.ts",
+    "./blob-store": "./blob-store.ts",
+    "./adapters/d1": "./adapters/d1/index.ts",
+    "./adapters/r2": "./adapters/r2.ts",
+    "./adapters/memory": "./adapters/memory.ts",
+    "./adapters/pages-http": "./adapters/pages-http.ts",
+    "./adapters/conformance": "./adapters/conformance.ts"
   },
   "scripts": {
     "test": "vitest run",
