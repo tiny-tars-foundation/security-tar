@@ -18,6 +18,14 @@
     "access-control",
     "key-derivation"
   ],
+  "engines": {
+    "node": ">=19"
+  },
+  "files": [
+    "*.ts",
+    "adapters/**/*.ts",
+    "!tests"
+  ],
   "exports": {
     "./crypto": "./crypto.ts",
     "./kdf": "./kdf.ts",
