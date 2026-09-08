@@ -1,5 +1,5 @@
 {
-  "name": "@tars/security",
+  "name": "@tinytars/security-tar",
   "version": "0.1.2",
   "description": "Runtime-agnostic key derivation, authenticated envelope encryption, and storage-agnostic access-control contracts for per-user encrypted data.",
   "license": "MIT",

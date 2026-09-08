@@ -1,4 +1,4 @@
-# `@tars/security`
+# `@tinytars/security-tar`
 
 [![Community Health](https://img.shields.io/badge/dynamic/json?url=https://api.github.com/repos/tiny-tars-foundation/security-tar/community/profile&query=$.health_percentage&suffix=%25&label=community%20health)](https://github.com/tiny-tars-foundation/security-tar/community)
 
@@ -57,7 +57,7 @@ Five pieces, each independently usable — nothing here requires adopting all fi
                              |  imports core modules only
                              v
    --------------------------------------------------------------
-    @tars/security (core) -- zero Cloudflare/platform imports
+    @tinytars/security-tar (core) -- zero Cloudflare/platform imports
 
     crypto.ts + kdf.ts        zero-knowledge envelope encryption
     envelope-access.ts        consent-based access sharing
@@ -111,7 +111,7 @@ underneath. Details:
 
 `adapters/*`: everything above — `crypto.ts`, `kdf.ts`, `stores.ts`, `envelope-access.ts`,
 `break-glass.ts`, and the rest — has zero Cloudflare (or any other platform) imports. An adopter
-who never imports `@tars/security/adapters/*` never links against Cloudflare's types at all —
+who never imports `@tinytars/security-tar/adapters/*` never links against Cloudflare's types at all —
 that's the actual mechanism behind "platform-independent," not a claim about intent. Five adapters
 ship as optional subpath exports for adopters who do want one: `adapters/d1` and `adapters/r2`
 (Cloudflare), `adapters/memory` (the portability proof — the same conformance suite that passes
@@ -122,7 +122,7 @@ wrapper, not a rewrite, for Cloudflare Pages Functions' request shape). Full pic
 ## Install
 
 ```
-npm install @tars/security
+npm install @tinytars/security-tar
 ```
 
 Requires an environment with `SubtleCrypto` (`globalThis.crypto.subtle`) — every modern browser,
@@ -144,7 +144,7 @@ import {
   wrapDEKForPublicKey,
   unwrapDEKWithPrivateKey,
   decryptVaultV2,
-} from "@tars/security/crypto";
+} from "@tinytars/security-tar/crypto";
 
 // One-time: the account's long-term keypair. In a real app the private key
 // is wrapped under a KEK (see ARCHITECTURE.md) and never held like this.
@@ -179,9 +179,9 @@ the route is unchanged.
 
 ```ts
 import { Hono } from "hono";
-import { resolveEnvelopeAccess } from "@tars/security/envelope-access";
-import type { EnvelopeAccessSource, ProviderLinkSource } from "@tars/security/envelope-access";
-import type { Envelope, ProviderLink, VaultRow } from "@tars/security/stores";
+import { resolveEnvelopeAccess } from "@tinytars/security-tar/envelope-access";
+import type { EnvelopeAccessSource, ProviderLinkSource } from "@tinytars/security-tar/envelope-access";
+import type { Envelope, ProviderLink, VaultRow } from "@tinytars/security-tar/stores";
 
 const envelopes = new Map<string, Envelope>(); // key: `${vaultId}:${principalAccountId}`
 const vaults = new Map<string, VaultRow>();

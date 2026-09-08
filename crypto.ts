@@ -2,7 +2,7 @@ import { toArrayBuffer as toAB } from "./bytes";
 import { deriveAesKey, deriveBits, IV_LEN, SALT_LEN } from "./kdf";
 
 // HD1 is this app's own envelope and stays here. Only the derivation is shared with the QBO vault's
-// EB1 — see the header of @tars/security/kdf for why the two formats must NOT be merged.
+// EB1 — see the header of @tinytars/security-tar/kdf for why the two formats must NOT be merged.
 const MAGIC = new Uint8Array([0x48, 0x44, 0x31]); // "HD1"
 const VERSION = 1;
 
