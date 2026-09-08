@@ -161,11 +161,34 @@ rows in:
   vault ID, nothing about who's allowed to.
 - **`ProviderLinkStore`** — grants between principals (a "provider" linked to a "patient", in the
   vocabulary this package's first adopter uses — read it generically as "grantee linked to
-  vault owner").
+  vault owner"). See § Principal model below for how this fits owner and org-recovery access.
 - **`AuditStore`** — append-only access-event logging, read back by subject.
 
 None of these five types know about each other. Composing them into a policy is a separate,
 explicit step — see below.
+
+## Principal model
+
+Three kinds of principal exist, and only three — this is the actual list, not a subset:
+
+1. **Owner.** Always has access to their own vault. No row, no grant, no expiry to check.
+2. **Org-recovery principal.** One designated system-level fallback per vault, itself revocable
+   (`orgRecoveryRevokedAt`) — for the "the owner is unreachable and something still needs to read
+   this" case. Adopters without that case pass an `orgAccountId` that never matches and the branch
+   never fires.
+3. **Grantee.** Anyone else, via an active `ProviderLink` (`stores.ts`). A grantee comes in exactly
+   two forms, both stored as the same `ProviderLink` row and resolved by the same `getActive()`
+   check:
+   - **Standing** — no `expiresAt`, revoked only explicitly.
+   - **Time-boxed** — granted, checked, and revoked through `break-glass.ts`'s lifecycle below:
+     TTL-clamped, self-expiring, always audited.
+
+This is one model, not three unrelated mechanisms bolted together: one grant primitive
+(`ProviderLink`), one resolution function (`resolveEnvelopeAccess`, next section), one audit
+trail. A standing grant and a time-boxed grant differ in exactly one field — whether `expiresAt`
+is set — never in how they're checked or who checks them. That single fact is why `break-glass.ts`
+doesn't duplicate `envelope-access.ts`'s resolution logic; it composes the same `ProviderLinkStore`
+instead.
 
 ## Access policy (`envelope-access.ts`)
 
@@ -193,9 +216,10 @@ implement. See `THREAT_MODEL.md`.
 
 ## Time-boxed access grants (`break-glass.ts`)
 
-Three functions — `grantBreakGlass`, `checkBreakGlass`, `revokeBreakGlass` — implement the
-"temporary access, then it lapses or is pulled" pattern on top of `ProviderLinkStore` and
-`AuditStore` (and `EnvelopeStore`, when the grant carries an envelope):
+The time-boxed half of the principal model above — a break-glass grant is a `ProviderLink`, not a
+fourth, separate mechanism. Three functions — `grantBreakGlass`, `checkBreakGlass`,
+`revokeBreakGlass` — implement the "temporary access, then it lapses or is pulled" pattern on top
+of `ProviderLinkStore` and `AuditStore` (and `EnvelopeStore`, when the grant carries an envelope):
 
 1. **Grant.** Validates the caller owns the pending link being approved, clamps the requested TTL
    to a caller-supplied `BreakGlassPolicy` (`defaultTtlHours`/`maxTtlHours`), stamps a

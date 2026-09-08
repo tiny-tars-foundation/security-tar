@@ -61,14 +61,18 @@ Full byte layout and the tradeoffs behind it:
 
 `envelope-access.ts`: access to a vault is a per-principal, revocable wrapped-key grant, composed
 from storage-agnostic contracts rather than baked into either one — and it closes a specific bug
-class along the way, expiry checked lazily per-route instead of once, centrally. Details:
+class along the way, expiry checked lazily per-route instead of once, centrally. This is one of
+two forms a grant takes — see [`ARCHITECTURE.md` § Principal
+model](ARCHITECTURE.md#principal-model) for both. Details:
 [`ARCHITECTURE.md` § Access policy](ARCHITECTURE.md#access-policy-envelope-accessts).
 
 ### Time-boxed break-glass access
 
 `break-glass.ts`: temporary access that's actually temporary — a TTL clamp, self-expiry on next
 check rather than on a timer, idempotent revoke, and an audit trail, so an exception doesn't
-quietly become a standing grant nobody remembers to close. Details:
+quietly become a standing grant nobody remembers to close. It's the time-boxed form of the same
+grant described above, not a separate mechanism — see [`ARCHITECTURE.md` § Principal
+model](ARCHITECTURE.md#principal-model). Details:
 [`ARCHITECTURE.md` § Time-boxed access grants](ARCHITECTURE.md#time-boxed-access-grants-break-glassts).
 
 ### Storage-agnostic contracts
