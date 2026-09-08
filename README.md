@@ -1,5 +1,6 @@
 # `@tinytars/vault`
 
+[![CI](https://github.com/tinytars/vault/actions/workflows/ci.yml/badge.svg)](https://github.com/tinytars/vault/actions/workflows/ci.yml)
 [![Community Health](https://img.shields.io/badge/dynamic/json?url=https://api.github.com/repos/tinytars/vault/community/profile&query=$.health_percentage&suffix=%25&label=community%20health)](https://github.com/tinytars/vault/community)
 
 A storage operator who can read what it stores hasn't encrypted the data — it's obfuscated it,
