@@ -1,6 +1,6 @@
 # `@tinytars/vault`
 
-[![Community Health](https://img.shields.io/badge/dynamic/json?url=https://api.github.com/repos/tiny-tars-foundation/vault/community/profile&query=$.health_percentage&suffix=%25&label=community%20health)](https://github.com/tiny-tars-foundation/vault/community)
+[![Community Health](https://img.shields.io/badge/dynamic/json?url=https://api.github.com/repos/tinytars/vault/community/profile&query=$.health_percentage&suffix=%25&label=community%20health)](https://github.com/tinytars/vault/community)
 
 A storage operator who can read what it stores hasn't encrypted the data — it's obfuscated it,
 and most hand-rolled "encrypted vault" designs end up exactly there, one convenience shortcut at a

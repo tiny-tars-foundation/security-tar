@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/tiny-tars-foundation/vault/security/policy
+    url: https://github.com/tinytars/vault/security/policy
     about: Please report vulnerabilities privately per SECURITY.md instead of opening a public issue.

@@ -6,10 +6,10 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tiny-tars-foundation/vault"
+    "url": "https://github.com/tinytars/vault"
   },
-  "homepage": "https://github.com/tiny-tars-foundation/vault",
-  "bugs": "https://github.com/tiny-tars-foundation/vault/issues",
+  "homepage": "https://github.com/tinytars/vault",
+  "bugs": "https://github.com/tinytars/vault/issues",
   "keywords": [
     "encryption",
     "webcrypto",
