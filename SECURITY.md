@@ -2,9 +2,9 @@
 
 ## Reporting a vulnerability
 
-Email **contact@tinytars.foundation** with a description of the issue and, if you have one, a
-minimal reproduction. Please don't open a public issue for a suspected vulnerability until it's
-been triaged.
+Please use GitHub's [private vulnerability reporting](https://github.com/tinytars/vault/security/advisories/new)
+rather than opening a public issue. Include a description of the issue and, if you have one, a
+minimal reproduction.
 
 We aim to acknowledge reports within 5 business days. There is no bug bounty; this is a
 volunteer-maintained package from a 501(c)(3).

@@ -39,5 +39,5 @@ compensating benefit.
 
 ## Reporting a security issue instead of filing a PR
 
-See `SECURITY.md` — vulnerabilities go to contact@tinytars.foundation, not a public issue or PR,
-until triaged.
+See `SECURITY.md` — vulnerabilities go through GitHub's private vulnerability reporting, not a
+public issue or PR, until triaged.
