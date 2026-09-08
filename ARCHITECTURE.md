@@ -8,10 +8,17 @@ write a new storage adapter, or judge whether a change to an existing one is saf
 never imports from `crypto.ts`, and neither imports from `stores.ts` or `envelope-access.ts`.
 
 ```
-kdf.ts              shared key derivation primitive
-crypto.ts            key-store.ts       envelope format + keypair/DEK logic (browser-only persistence)
-stores.ts             storage-agnostic contracts (no crypto, no policy)
-envelope-access.ts    one composed access-policy function, built on stores.ts
+kdf.ts                     shared key-derivation primitive (PBKDF2)
+   |
+   v
+crypto.ts   +   key-store.ts     HD1 envelope + keypair/DEK logic
+                (browser-only: persists the unwrapped private key)
+   |
+   v
+stores.ts                  five storage-agnostic contracts -- no crypto, no policy
+   |
+   v
+envelope-access.ts   +   break-glass.ts     composed access policy -- standing / time-boxed
 ```
 
 ## Key derivation (`kdf.ts`)
@@ -189,6 +196,18 @@ trail. A standing grant and a time-boxed grant differ in exactly one field — w
 is set — never in how they're checked or who checks them. That single fact is why `break-glass.ts`
 doesn't duplicate `envelope-access.ts`'s resolution logic; it composes the same `ProviderLinkStore`
 instead.
+
+```
+resolveEnvelopeAccess(vault, principal):
+
+  1. principal is vault.owner?                        -> allow, no row needed
+  2. principal is vault.orgRecoveryAccountId
+       and orgRecoveryRevokedAt is unset?              -> allow, revocable
+  3. ProviderLink.getActive(vault.owner, principal)?   -> allow
+       expiresAt == null   -> standing grant, revoked only explicitly
+       expiresAt is set    -> time-boxed grant, see break-glass.ts below
+  4. none of the above                                 -> deny
+```
 
 ## Access policy (`envelope-access.ts`)
 

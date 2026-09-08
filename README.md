@@ -49,6 +49,27 @@ an oversight; it's the same evidence the argument above rests on, stated a secon
 
 Five pieces, each independently usable — nothing here requires adopting all five.
 
+```
+                          your app
+                             |
+                             |  imports core modules only
+                             v
+   --------------------------------------------------------------
+    @tars/security (core) -- zero Cloudflare/platform imports
+
+    crypto.ts + kdf.ts        zero-knowledge envelope encryption
+    envelope-access.ts        consent-based access sharing
+    break-glass.ts            time-boxed access grants
+    stores.ts                 storage-agnostic contracts
+   --------------------------------------------------------------
+                             |  implements stores.ts's five contracts
+                             v
+   --------------------------------------------------------------
+    adapters/*  (optional, subpath exports)
+    d1 . r2 . memory . pages-http . conformance
+   --------------------------------------------------------------
+```
+
 ### Zero-knowledge vault encryption
 
 `crypto.ts` + `kdf.ts`: an authenticated envelope format (HD1) where the storage operator holds
