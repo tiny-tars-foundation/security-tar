@@ -1,6 +1,6 @@
 # Threat model
 
-This document says what `@tinytars/security-tar` protects against, what it deliberately does not, and
+This document says what `@tinytars/vault` protects against, what it deliberately does not, and
 where the trust boundaries sit. Read it before adopting the package, and especially before
 building a storage adapter for it — the adapter inherits these boundaries, it doesn't get to
 redraw them.

@@ -4,7 +4,7 @@ This is the contract, not a tour — see `README.md`'s **What it does** for the 
 an architect scans first. What follows is what a reader needs in order to adopt the package,
 write a new storage adapter, or judge whether a change to an existing one is safe.
 
-`@tinytars/security-tar` has three layers. Lower layers know nothing about higher ones — `kdf.ts`
+`@tinytars/vault` has three layers. Lower layers know nothing about higher ones — `kdf.ts`
 never imports from `crypto.ts`, and neither imports from `stores.ts` or `envelope-access.ts`.
 
 ```
@@ -264,7 +264,7 @@ on revoke" section, which applies here without modification.
 Five adapters ship, each as its own subpath export, none of them imported by the core package
 files above — `crypto.ts`, `kdf.ts`, `bytes.ts`, `key-store.ts`, `vault-sink.ts`, `stores.ts`,
 `envelope-access.ts`, and `break-glass.ts` have zero Cloudflare (or any other platform) imports.
-An adopter that never touches `@tinytars/security-tar/adapters/*` never links against Cloudflare's types
+An adopter that never touches `@tinytars/vault/adapters/*` never links against Cloudflare's types
 at all — that's the actual mechanism behind "platform-independent," not just a claim about intent.
 
 - **`adapters/d1`** — `D1AccountStore`/`D1CredentialStore`/`D1EnvelopeStore`/`D1ProviderLinkStore`/
