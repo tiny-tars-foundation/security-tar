@@ -11,8 +11,9 @@ volunteer-maintained package from a 501(c)(3).
 
 ## Scope
 
-In scope: `kdf.ts`, `crypto.ts`, `key-store.ts`, `stores.ts`, `envelope-access.ts`, and any
-adapter shipped from this repository (`adapters/*`, once published).
+In scope: `kdf.ts`, `crypto.ts`, `key-store.ts`, `stores.ts`, `envelope-access.ts`,
+`break-glass.ts`, `blob-store.ts`, and the five published adapters — `adapters/d1`,
+`adapters/r2`, `adapters/memory`, `adapters/pages-http`, `adapters/conformance`.
 
 Out of scope: vulnerabilities in an adopter's own use of this package that fall outside the
 guarantees documented in `THREAT_MODEL.md` (for example, an adopter exposing a `Store` method to

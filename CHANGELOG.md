@@ -62,7 +62,7 @@ version; no prior published releases.
 
 - No forward secrecy on revoke — see `THREAT_MODEL.md`.
 
-### Known gaps as of the Unreleased adapters above
+### Known gaps, not silently dropped
 
 - The D1/R2 adapters' real conditional-write/transaction semantics are verified against real
   `workerd` only in a Cloudflare-hosted adopter's own test suite, not in this package's `npm

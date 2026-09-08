@@ -1,5 +1,9 @@
 # Architecture
 
+This is the contract, not a tour — see `README.md`'s **What it does** for the featureset summary
+an architect scans first. What follows is what a reader needs in order to adopt the package,
+write a new storage adapter, or judge whether a change to an existing one is safe.
+
 `@tars/security` has three layers. Lower layers know nothing about higher ones — `kdf.ts`
 never imports from `crypto.ts`, and neither imports from `stores.ts` or `envelope-access.ts`.
 
