@@ -1,0 +1,52 @@
+{
+  "name": "@tinytars/vault",
+  "version": "0.1.7",
+  "description": "Runtime-agnostic key derivation, authenticated envelope encryption, and storage-agnostic access-control contracts for per-user encrypted data.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tinytars/vault"
+  },
+  "homepage": "https://github.com/tinytars/vault",
+  "bugs": "https://github.com/tinytars/vault/issues",
+  "keywords": [
+    "encryption",
+    "webcrypto",
+    "envelope-encryption",
+    "access-control",
+    "key-derivation"
+  ],
+  "engines": {
+    "node": ">=19"
+  },
+  "files": [
+    "*.ts",
+    "adapters/**/*.ts",
+    "!tests"
+  ],
+  "exports": {
+    "./crypto": "./crypto.ts",
+    "./kdf": "./kdf.ts",
+    "./bytes": "./bytes.ts",
+    "./key-store": "./key-store.ts",
+    "./vault-sink": "./vault-sink.ts",
+    "./stores": "./stores.ts",
+    "./envelope-access": "./envelope-access.ts",
+    "./break-glass": "./break-glass.ts",
+    "./blob-store": "./blob-store.ts",
+    "./adapters/d1": "./adapters/d1/index.ts",
+    "./adapters/r2": "./adapters/r2.ts",
+    "./adapters/memory": "./adapters/memory.ts",
+    "./adapters/pages-http": "./adapters/pages-http.ts",
+    "./adapters/conformance": "./adapters/conformance.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.8",
+    "typescript": "~6.0.2"
+  }
+}
