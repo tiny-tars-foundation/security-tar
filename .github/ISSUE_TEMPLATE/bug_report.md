@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Something in security-tar isn't behaving as documented
+about: Something in @tinytars/vault isn't behaving as documented
 title: ""
 labels: bug
 ---
@@ -16,7 +16,7 @@ Minimal steps or a code snippet that triggers it.
 What you expected to happen instead.
 
 **Environment**
-- security-tar version:
+- @tinytars/vault version:
 - Runtime (Node / Cloudflare Workers / Deno) and version:
 
 **Is this a security vulnerability?**
