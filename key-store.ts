@@ -1,4 +1,4 @@
-// W49 — persist the account private key across a browser refresh so a valid hd_session doesn't force
+// Persist the account private key across a browser refresh so a valid session doesn't force
 // re-auth. The key is stored as a NON-EXTRACTABLE CryptoKey (structured-cloned into IndexedDB): it can
 // still unwrap the vault DEK (ECDH deriveKey) on the next load, but its raw bytes can't be read back
 // out, so an XSS payload can't exfiltrate it (it could still USE it while the page is open — inherent

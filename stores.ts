@@ -1,11 +1,10 @@
 // Storage-agnostic contracts for the identity/vault/access-control data this package's crypto
 // operates over. No Cloudflare or D1 dependency here by design (see README.md) — an adopter wires
-// these to whatever database they run; health-dash-web's D1 adapter lives at
-// apps/health-dash-web/functions/_lib/d1-identity-store.ts and is one implementation of these,
-// not the definition of them.
+// these to whatever database they run; `adapters/d1/` in this package is one implementation of
+// these contracts, not the definition of them.
 //
-// health-dash-web's own functions/_lib/identity-*.ts modules re-export the types below rather than
-// redeclaring them, so there is exactly one definition of each shape.
+// An adopter's own route handlers should re-export the types below rather than redeclaring them,
+// so there is exactly one definition of each shape.
 
 export type LifecycleStage = "waitlist" | "lead" | "active" | "paying" | "churned";
 export type AuthMethod = "passkey" | "google" | "password" | "recovery";

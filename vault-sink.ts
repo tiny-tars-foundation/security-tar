@@ -8,13 +8,14 @@ export interface VaultSink {
 }
 
 /**
- * W70 — the version of each vault blob this browser context last saw.
+ * The version of each vault blob this browser context last saw.
  *
- * Deliberately held HERE rather than threaded through callers. `saveVaultV2` has SEVEN call sites in
- * App.svelte (the queued edit path plus key rotation, leaf-regen persist, Finding refresh, report
- * import, raw upload and onboarding), and only one of them goes through the save queue. Since the
- * precondition is now REQUIRED on the browser path, a call site that forgot to pass an etag would not
- * degrade — it would 428, i.e. a patient unable to save their own record. Keeping the token where the
+ * Deliberately held HERE rather than threaded through callers. A real adopter typically has several
+ * independent call sites that all persist through `saveVaultV2` — a queued-edit path plus things
+ * like key rotation, background regeneration, imports, raw uploads and onboarding — and usually only
+ * one of them goes through a save queue. Since the precondition is REQUIRED on the browser path, a
+ * call site that forgot to pass an etag would not degrade — it would 428, i.e. an owner unable to
+ * save their own record. Keeping the token where the
  * request is built makes every path correct by construction instead of by remembering.
  *
  * One entry per vault id, which is exactly the domain: a browser context has one current view of a
@@ -48,10 +49,10 @@ export class VaultConflictError extends Error {
 /**
  * One hook, so every save path reports a conflict — not just the queued one.
  *
- * Six of `saveVaultV2`'s seven call sites are direct `await`s outside the save queue (key rotation,
- * leaf-regen persist, Finding refresh, report import, raw upload, onboarding). Wiring the conflict
- * state through each would be six chances to miss one, and a missed one is an unhandled rejection on a
- * health record. Every save funnels through this sink, so this is the one place that sees them all.
+ * Most real `saveVaultV2` call sites are direct `await`s outside any save queue (key rotation,
+ * background regeneration, import, raw upload, onboarding). Wiring the conflict state through each
+ * would be one chance to miss it per call site, and a missed one is an unhandled rejection on a
+ * record someone owns. Every save funnels through this sink, so this is the one place that sees them all.
  * The error still throws afterwards, so existing per-path error handling is unchanged.
  */
 let onConflict: ((e: VaultConflictError) => void) | null = null;
@@ -59,10 +60,9 @@ export function setVaultConflictHandler(fn: ((e: VaultConflictError) => void) | 
   onConflict = fn;
 }
 
-// Dev-only sink: POSTs the blob to the Vite dev-server middleware, which writes
-// public/data-{id}.enc to disk (see vite.config.ts). Absent from the deployed
-// build — there is no such endpoint in production. The R2 sink (W6) is the
-// second implementation of this interface for remote/mobile save.
+// Dev-only sink: POSTs the blob to a local dev-server middleware, which writes it to disk.
+// Absent from the deployed build — there is no such endpoint in production. The R2 sink below is
+// the second implementation of this interface, for a real remote/mobile save.
 export const localSink: VaultSink = {
   async put(id, blob) {
     const res = await fetch(`/__save-vault?id=${encodeURIComponent(id)}`, {
@@ -76,9 +76,9 @@ export const localSink: VaultSink = {
   },
 };
 
-// Remote sink: PUTs the encrypted blob to the R2-backed Pages Function (W6, re-gated W44).
-// `/api/vault/{id}` only exists in the deployed build; the guard now accepts the hd_session
-// cookie (owner/granted-provider envelope check) — same-origin fetch sends it automatically.
+// Remote sink: PUTs the encrypted blob to an R2-backed Pages Function.
+// `/api/vault/{id}` only exists in the deployed build; the route guard checks the adopter's own
+// session cookie (owner/granted-provider envelope check) — same-origin fetch sends it automatically.
 // The Function stores opaque ciphertext — same as localSink, never plaintext or a key.
 /**
  * One write at a time per vault, so the app never conflicts with ITSELF.
@@ -139,7 +139,7 @@ async function putConditional(id: string, blob: Uint8Array): Promise<void> {
 // wrangler-pages-dev e2e harness) persists to R2 and never references /__save-vault.
 export const vaultSink: VaultSink = import.meta.env.DEV ? localSink : r2Sink;
 
-// W44 — encrypt the vault under its DEK (HD1 v2 envelope) and persist. The DEK is the vault's
+// Encrypt the vault under its DEK (HD1 v2 envelope) and persist. The DEK is the vault's
 // random data key, unwrapped at login from the caller's key envelope; it stays in memory.
 export async function saveVaultV2<T = Record<string, unknown>>(vault: T, id: string, dek: CryptoKey, sink: VaultSink): Promise<void> {
   const blob = await encryptVaultV2(vault, dek);

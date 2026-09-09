@@ -4,8 +4,8 @@ import { R2BlobStore, type R2Bucket, type R2Conditional } from "../adapters/r2";
 // R2BlobStore is a thin conditional-mapping shim (BlobConditional -> R2's onlyIf shape). No
 // workerd/Miniflare dependency here by design (see package.json's devDependencies) — this pins the
 // mapping logic against a hand-written fake bucket instead. The real conditional-write semantics
-// (etagMatches/etagDoesNotMatch actually enforced) are only proven against real workerd in an
-// adopter's own test suite, e.g. health-dash-web's r2-conditional-put.test.ts — see CHANGELOG.md.
+// (etagMatches/etagDoesNotMatch actually enforced) are only proven against real workerd, in an
+// adopter's own test suite — see ARCHITECTURE.md's "Adapters" section.
 
 function fakeBucket() {
   const store = new Map<string, Uint8Array>();

@@ -1,17 +1,18 @@
-// The passphrase→key derivation shared by every passphrase-encrypted blob in this monorepo.
+// The passphrase→key derivation shared by every passphrase-encrypted blob that builds on this
+// package.
 //
-// W72. Two envelope formats derive their key identically and independently: the QBO token vault
-// (`EB1`, packages/qbo/crypto.ts) and the health-dash v1 vault plus its account KEKs (`HD1`,
-// apps/health-dash-web/src/lib/crypto.ts). Same PBKDF2-SHA256, same 200_000 iterations, same
-// AES-GCM-256, same 16-byte salt and 12-byte IV — written out twice, so a decision to raise the
-// iteration count could be taken in one file and silently not the other. Only the derivation is
-// shared here.
+// This derivation is deliberately factored out on its own, separate from any particular envelope
+// format: PBKDF2-SHA256, 200_000 iterations, AES-GCM-256, a 16-byte salt and a 12-byte IV. An
+// adopter building a second, unrelated encrypted-blob format alongside this package's own HD1
+// envelope (`crypto.ts`) should reuse this file rather than reimplementing the derivation —
+// reimplementing it independently is exactly how a later decision to raise the iteration count
+// gets taken in one copy and silently not the other.
 //
-// WHAT IS DELIBERATELY NOT SHARED: the envelope. `EB1` and `HD1` keep their own magic bytes, their
-// own version handling and their own framing, in their own modules. A unified envelope would make a
-// QBO token blob a syntactically valid input to the vault reader, which is a confusion this
-// separation prevents for free. If you are here to "finish the job" by merging the two files — that
-// is the bug this comment exists to stop.
+// WHAT IS DELIBERATELY NOT SHARED: the envelope. HD1 keeps its own magic bytes, its own version
+// handling and its own framing in its own module — a sibling format should do the same in its own.
+// A unified envelope would make a foreign blob a syntactically valid input to this package's vault
+// reader, which is a confusion this separation prevents for free. If you are here to "finish the
+// job" by merging formats — that is the bug this comment exists to stop.
 //
 // RUNTIME-AGNOSTIC BY CONSTRUCTION: this module imports nothing and touches no global. One caller is
 // Node-only (`node:crypto`'s webcrypto), the others run in the browser and in Workers, so the

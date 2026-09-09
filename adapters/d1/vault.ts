@@ -53,7 +53,7 @@ export async function getVault(db: D1Database, vaultId: string): Promise<VaultRo
   return row ? mapVault(row) : null;
 }
 
-/** W75 — the vault whose in-flight rotation has reserved this key. See `commitRotation`. */
+/** The vault whose in-flight rotation has reserved this key. See `commitRotation`. */
 export async function getVaultByStagingR2Key(db: D1Database, r2Key: string): Promise<VaultRow | null> {
   const row = await db.prepare("SELECT * FROM vaults WHERE rotation_staging_r2_key = ?").bind(r2Key).first<VaultRowRaw>();
   return row ? mapVault(row) : null;
@@ -106,7 +106,7 @@ export async function putEnvelope(
 }
 
 /**
- * W71 — swap a vault's whole envelope set atomically.
+ * Swap a vault's whole envelope set atomically.
  *
  * The rotation route used to delete every envelope in a loop and then build the replacements one at a
  * time, decoding each `wrappedDEK` as it went. Two ways that ended in an unrecoverable vault: a
@@ -139,7 +139,7 @@ export async function replaceEnvelopes(
 }
 
 /**
- * W75 — the whole re-key, committed as one D1 batch: swap the envelope set AND repoint the vault at
+ * The whole re-key, committed as one D1 batch: swap the envelope set AND repoint the vault at
  * the freshly-written object, in one implicit transaction.
  *
  * The atomicity is the point. The rotation used to re-encrypt IN PLACE — new DEK into the same r2

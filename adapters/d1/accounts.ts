@@ -70,7 +70,7 @@ export async function getAccountByEmail(db: D1Database, email: string): Promise<
 /**
  * The instant before which this account's session cookies are no longer accepted, or null.
  *
- * W71 — read on every authenticated request (see `requireSession`). One indexed lookup by primary
+ * Read on every authenticated request, by the adopter's own session-check middleware. One indexed lookup by primary
  * key is what buys revocability: the cookie is self-contained, so without a server-side fact to
  * check against, nothing short of rotating SESSION_SECRET for the entire deployment can invalidate one.
  */
@@ -149,7 +149,7 @@ export async function tombstoneAccount(db: D1Database, accountId: string, at: st
 }
 
 /**
- * W73 — stamps when the account's email address changed.
+ * Stamps when the account's email address changed.
  *
  * Read by the recovery routes, which refuse to issue a grant while the address is still new: a stolen
  * cookie that repoints the mailbox should not be able to convert that into a recovery code minutes

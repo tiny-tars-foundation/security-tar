@@ -68,7 +68,7 @@ export async function updateProviderLinkStatus(db: D1Database, id: string, statu
   await db.prepare("UPDATE provider_links SET status = ? WHERE id = ?").bind(status, id).run();
 }
 
-// W44 P4b — a patient approving a support request: flip the link active, stamp its time-box + consent.
+// An owner approving a support request: flip the link active, stamp its time-box + consent.
 export async function grantSupportLink(
   db: D1Database,
   id: string,
