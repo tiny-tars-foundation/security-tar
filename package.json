@@ -52,8 +52,11 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0"
+  },
   "devDependencies": {
-    "vitest": "^4.1.8",
-    "typescript": "~6.0.2"
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.8"
   }
 }
