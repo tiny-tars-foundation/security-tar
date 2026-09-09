@@ -23,6 +23,13 @@ semver, but is pre-1.0 — expect breaking changes between minor versions until 
   adopter's own Miniflare-backed suite.
 - `tests/blob-store.test.ts` — pins `R2BlobStore`'s conditional-mapping logic against a
   hand-written fake R2 bucket.
+- `auth-client.ts`, `auth-recovery.ts`, `auth-support.ts`, `auth-grants.ts`, `org-recovery.ts` —
+  browser-side reference client wiring `crypto.ts` to a specific signup/login/recovery/
+  support-access/grant API shape. Not a portable primitive — see `ARCHITECTURE.md`'s "Reference
+  auth client" section and `THREAT_MODEL.md`'s "Not a portable client SDK".
+- `vault-session.ts` — `VaultEntry`/`VaultSession` types and `openVault()`, the decrypt-and-open
+  step every unlock path (owner, provider, support) shares.
+- `base64.ts` — byte/base64 codec used by the client layer above.
 
 See `ARCHITECTURE.md`'s "Adapters" section for what each one is for and what it doesn't cover.
 

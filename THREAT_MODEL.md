@@ -8,8 +8,12 @@ redraw them.
 ## What this package is
 
 A set of pure cryptographic primitives (`kdf.ts`, `crypto.ts`), one browser-only key-persistence
-helper (`key-store.ts`), a set of storage-agnostic data contracts (`stores.ts`), and one composed
-access-policy function (`envelope-access.ts`). See `ARCHITECTURE.md` for how they fit together.
+helper (`key-store.ts`), a set of storage-agnostic data contracts (`stores.ts`), one composed
+access-policy function (`envelope-access.ts`), and a reference client layer (`auth-client.ts`,
+`auth-recovery.ts`, `auth-support.ts`, `auth-grants.ts`, `org-recovery.ts`, `vault-session.ts`)
+that composes those primitives into worked signup/login/recovery/support-access/grant flows
+against one specific server API shape. See `ARCHITECTURE.md` for how they fit together, and "Not a
+portable client SDK" below before treating the reference client as a drop-in for your own backend.
 
 ## What this package is NOT
 
@@ -17,7 +21,17 @@ access-policy function (`envelope-access.ts`). See `ARCHITECTURE.md` for how the
   Nothing here defends against a network attacker who can also break TLS.
 - **Not an authentication system.** `deriveAuthHash()` gives you a value a server can verify
   without learning the password, but issuing sessions, checking them on each request, and
-  deciding whether a caller is who they claim to be is entirely the adopter's job.
+  deciding whether a caller is who they claim to be is entirely the adopter's job. The reference
+  client layer (`auth-client.ts` and friends) orchestrates signup/login/recovery calls and unwraps
+  the resulting keys client-side, but it does not change this: session issuance and verification
+  stay server-side, and the API it calls is a worked example, not a contract this package
+  implements or enforces on your server.
+- **Not a portable client SDK.** `auth-client.ts`/`auth-recovery.ts`/`auth-support.ts`/
+  `auth-grants.ts` call a specific set of `/api/auth/*`, `/api/account/*`, `/api/support/*`,
+  `/api/providers/*`, and `/api/vault/*` routes that this package does not implement or specify as
+  a contract — they show how the primitives above compose into real flows, not something you
+  import and point at an arbitrary backend. `vault-sink.ts`'s `r2Sink`/`localSink` already carry
+  this same caveat for save-vault routes; see `ARCHITECTURE.md`'s "Reference auth client" section.
 - **Not rate-limiting or brute-force protection.** Nothing here throttles passphrase or
   recovery-code guesses. An adopter must rate-limit any endpoint that accepts one.
 - **Not the storage backend's access control.** D1's, Postgres's, or R2's own IAM/ACL layer is

@@ -120,6 +120,23 @@ against the D1 adapter passes against it, unmodified), and `adapters/pages-http`
 wrapper, not a rewrite, for Cloudflare Pages Functions' request shape). Full picture:
 [`ARCHITECTURE.md` § Adapters](ARCHITECTURE.md#adapters).
 
+### Reference client: auth flows wired to a real API
+
+`auth-client.ts`, `auth-recovery.ts`, `auth-support.ts`, `auth-grants.ts`, and `org-recovery.ts`:
+browser-side orchestration for signup, password/passkey login, Google SSO bootstrap, recovery-code
+issuance and redemption, provider/support access grants, and account-settings method management —
+built on `crypto.ts`'s primitives, calling a specific set of `/api/auth/*`, `/api/account/*`,
+`/api/support/*`, and `/api/providers/*` routes. `vault-session.ts` holds the `VaultEntry`/
+`VaultSession` types and `openVault()` these flows share to open a decrypted vault once a key is in
+hand.
+
+Unlike the four pieces above, this layer is a **reference implementation, not a portable
+primitive** — it's wired to one server API shape (documented in
+[`ARCHITECTURE.md` § Reference auth client](ARCHITECTURE.md#reference-auth-client-auth-clientts-and-friends)),
+the same way `vault-sink.ts`'s `r2Sink`/`localSink` are wired to specific save-vault routes. Read
+it as a worked example of composing `crypto.ts` into real signup/login/recovery/support flows, not
+something you import and point at your own backend unless your routes happen to match.
+
 ## Install
 
 ```
@@ -248,6 +265,13 @@ is entirely your own auth middleware's job. See `THREAT_MODEL.md`'s "trust bound
 | `adapters/memory.ts` | In-memory implementations of all five `stores.ts` contracts — the reference adapter that proves the interfaces are actually storage-agnostic, not just Cloudflare-shaped |
 | `adapters/pages-http.ts` | `pagesHandler()` — wraps a portable `(request, deps) => Promise<Response>` handler into Cloudflare Pages Functions' `onRequestX({request, env, params})` shape |
 | `adapters/conformance.ts` | Shared vitest contract suites for each `stores.ts` interface, run against every adapter above so "storage-agnostic" is proven, not asserted |
+| `auth-client.ts` | Password/passkey/Google signup, login, session resume, account-settings method management — the browser-side orchestration wiring `crypto.ts` to a specific `/api/auth/*`/`/api/account/*` API. Reference client, not a portable primitive |
+| `auth-recovery.ts` | Recovery-code issuance/redemption (owner and provider-issued), DEK rotation, access-event log fetch — same reference-client caveat as `auth-client.ts` |
+| `auth-support.ts` | Audited support-agent access: patient approves a pending request, support enters via an audited endpoint; support→provider roster access |
+| `auth-grants.ts` | Provider/clinician grant CRUD from the patient side: lookup, grant, revoke |
+| `org-recovery.ts` | Backfills the org-recovery envelope for accounts that predate or missed it at signup — best-effort, never blocks an unlock |
+| `vault-session.ts` | `VaultEntry`/`VaultSession` types plus `openVault()` — the decrypt-and-open-session step every unlock path shares |
+| `base64.ts` | Byte ↔ base64 codec used throughout the client layer |
 
 Full design, including the exact envelope byte layout and why extractable keys are a deliberate
 choice, is in `ARCHITECTURE.md` — see **What it does** above for the featureset summary and the

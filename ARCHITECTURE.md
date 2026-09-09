@@ -305,3 +305,75 @@ sibling to `vault-sink.ts`'s HTTP-`PUT` `VaultSink`, but writing straight to S3/
 browser) is not built — see `CHANGELOG.md`. And these adapters' conditional-write/transaction
 semantics are verified against real D1/`workerd`/R2 only in an adopter's own test suite, not in
 this package's `npm test`, which deliberately carries no Miniflare dependency.
+
+## Reference auth client (`auth-client.ts` and friends)
+
+Everything above this section is a primitive: composable, storage-agnostic, wired to nothing
+external. `auth-client.ts`, `auth-recovery.ts`, `auth-support.ts`, `auth-grants.ts`, and
+`org-recovery.ts` are the opposite kind of thing on purpose — browser-side orchestration that
+composes those primitives against one specific server API shape, included because "how do these
+compose into an actual signup/login/recovery flow" is exactly the part hardest to get right from
+the primitives alone, and worth showing worked rather than left as an exercise.
+
+**Dependency graph**: all five import from `crypto.ts` and `base64.ts` directly; `auth-recovery.ts`,
+`auth-support.ts`, and `auth-grants.ts` additionally import `auth-client.ts`'s `bytesToBase64`/
+`base64ToBytes`/`failed`/`currentAuthHashFor` helpers rather than duplicating them. `vault-session.ts`
+depends on none of these five — only `crypto.ts` — and `org-recovery.ts` is the one file here that
+depends on `vault-session.ts`, for the `VaultSession` type its `ensureOrgRecoveryEnvelope` takes.
+
+### What each file orchestrates
+
+- **`auth-client.ts`** — signup and login for both password and passkey (WebAuthn + PRF)
+  credentials, a Google-SSO session bootstrap, plain-session resume, and account-settings method
+  management (add/remove passkey, add Google). The shared `KDF_ITERATIONS`/`rand`/`bytesToHex`/
+  `hexToBytes`/`failed`/`currentAuthHashFor` helpers the other four files import live here, not
+  duplicated.
+- **`auth-recovery.ts`** — the recovery-code ladder: a passphrase-style recovery code the owner
+  mints in advance (`regenerateRecoveryCode`, redeemed by `recoverAccount`), and a provider-issued,
+  read-down-the-phone grant code (`issueRecoveryCode`/`redeemRecoveryCode`) for the case where the
+  owner has lost every credential and a clinician is re-establishing access on their behalf. Also
+  DEK rotation (`getVaultPrincipals`/`stageVaultRotation`/`rotateVault`) and the account's
+  access-event log fetch.
+- **`auth-support.ts`** — audited support-agent access: a patient approves a pending support
+  request by wrapping their in-memory DEK to the agent's public key (time-boxed); a separate,
+  metadata-only path lets a support agent request roster access to a *provider's* patient list
+  through the same request/approve shape, without ever seeing a DEK.
+- **`auth-grants.ts`** — the patient-side half of provider access: look up a provider by email,
+  grant them the vault by wrapping the DEK to their public key, revoke.
+- **`org-recovery.ts`** — one function, `ensureOrgRecoveryEnvelope`, that backfills the
+  org-recovery envelope (see `THREAT_MODEL.md`'s "org recovery principal") for a session that
+  predates it or missed it at signup. Deliberately best-effort: a failure here must never block or
+  fail an unlock, which is why it swallows its own errors rather than propagating them.
+- **`vault-session.ts`** — the `VaultEntry`/`VaultSession` types both the provider-roster and
+  support-console flows above hand to their host, plus `openVault()`, the decrypt-and-open-session
+  step every unlock path (owner, provider, support) shares. The concrete `VaultSession`
+  implementation — the reactive session object that actually holds these fields — is intentionally
+  not here: it's UI-framework-coupled and lives in the adopting app's own frame layer. This package
+  ships only the interface and the one pure function that operates on it.
+
+### Two design choices worth reading before you adapt this
+
+**The enumeration oracle stays closed on purpose.** Every call that authenticates an unidentified
+caller — `signupPassword`, both login paths, the Google bootstrap, `recoverAccount`,
+`redeemRecoveryCode` — deliberately does *not* surface the server's own error message the way
+everything else here does via `failed()`. A salt/grant-salt lookup for an unregistered address
+returns a decoy rather than a 404, and a client-visible "no such account" message would reopen
+exactly the oracle the decoy exists to close. Once a caller has an established session, every other
+function does use `failed()` and does surface the server's message — there's nobody left to
+enumerate to at that point.
+
+**Recovery has two independently-shaped codes, not one.** A 32-character alphabet excluding
+ambiguous characters (`0/O`, `1/I`) produces the owner's own 20-character recovery code; a
+Crockford-style alphabet produces a shorter, hyphen-grouped code meant to be read aloud down a
+phone line by a clinician who already holds the patient's DEK. `detectRecoveryKind()` routes a
+pasted/typed string between the two ladders by stripped length alone — no shared length makes the
+two ambiguous by construction. The shorter code is safe to read aloud specifically because the
+server (not this package) caps attempts and expires the grant within an hour; a client-side length
+choice is not itself a rate limit, and reusing that length for an unattempt-limited flow would be
+a mistake.
+
+This layer calls a specific set of routes (`/api/auth/*`, `/api/account/*`, `/api/support/*`,
+`/api/providers/*`, `/api/vault/*`) that this package does not implement or specify as a contract —
+the same caveat `vault-sink.ts` already carries for `r2Sink`/`localSink` above. Treat it as a
+worked reference for composing the primitives into real flows, not a client SDK for an arbitrary
+backend.
