@@ -1,14 +1,13 @@
 import type { BlobStore, BlobConditional, StoredBlob } from "../blob-store";
 
 // Minimal structural type for the R2 binding — no @cloudflare/workers-types dependency, and
-// trivially mockable in tests. An adopter's own Pages Function route should import R2Bucket/
-// R2BlobStore from here instead of declaring its own copy.
+// trivially mockable in tests.
 export interface R2ObjectBody {
   body: ReadableStream;
   /** The version token. Handed to the browser on GET and sent back as If-Match on PUT. */
   etag: string;
 }
-/** A precondition on a write. Verify this against real `workerd` in an adopter's own test suite — see ARCHITECTURE.md's "Adapters" section. */
+/** A precondition on a write. Real workerd conditional-write semantics are verified in an adopter's own test suite, not here — see CHANGELOG.md. */
 export interface R2Conditional {
   etagMatches?: string;
   etagDoesNotMatch?: string;
@@ -17,8 +16,8 @@ export interface R2Bucket {
   get(key: string): Promise<R2ObjectBody | null>;
   /**
    * Returns the stored object (carrying its NEW etag), or `null` when an `onlyIf` precondition fails.
-   * Null-on-failure rather than a throw is observed behaviour, not an assumption — see
-   * tests/unit/r2-conditional-put.test.ts, which pins it against workerd.
+   * Null-on-failure rather than a throw is observed behaviour against workerd, not an assumption —
+   * an adopter's own test suite is where this gets pinned; see CHANGELOG.md.
    */
   put(key: string, value: Uint8Array, options?: { onlyIf?: R2Conditional }): Promise<{ etag: string } | null>;
   delete(key: string): Promise<void>;

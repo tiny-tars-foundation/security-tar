@@ -1,10 +1,11 @@
-// Persist the account private key across a browser refresh so a valid session doesn't force
+// Persist the account private key across a browser refresh so a valid session cookie doesn't force
 // re-auth. The key is stored as a NON-EXTRACTABLE CryptoKey (structured-cloned into IndexedDB): it can
 // still unwrap the vault DEK (ECDH deriveKey) on the next load, but its raw bytes can't be read back
 // out, so an XSS payload can't exfiltrate it (it could still USE it while the page is open — inherent
-// to any "stay signed in"). Password/passkey only; Google re-bootstraps from server-custody material.
+// to any "stay signed in"). Password/passkey only; a federated-login method re-bootstraps from
+// server-custody material instead.
 
-const DB_NAME = "hd-session";
+const DB_NAME = "security-session";
 const STORE = "keys";
 const KEY_ID = "account-private-key";
 const EC_PARAMS = { name: "ECDH", namedCurve: "P-256" } as const;

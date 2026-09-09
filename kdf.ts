@@ -1,23 +1,15 @@
-// The passphrase→key derivation shared by every passphrase-encrypted blob that builds on this
-// package.
+// The passphrase→key derivation shared by every passphrase-encrypted blob this package produces.
 //
-// This derivation is deliberately factored out on its own, separate from any particular envelope
-// format: PBKDF2-SHA256, 200_000 iterations, AES-GCM-256, a 16-byte salt and a 12-byte IV. An
-// adopter building a second, unrelated encrypted-blob format alongside this package's own HD1
-// envelope (`crypto.ts`) should reuse this file rather than reimplementing the derivation —
-// reimplementing it independently is exactly how a later decision to raise the iteration count
-// gets taken in one copy and silently not the other.
+// This module derives a key from a passphrase and salt and stops there — it does not define an
+// envelope format, version byte, or framing. A caller with its own envelope needs (see `crypto.ts`
+// for this package's own HD1 format) keeps its magic bytes, version handling, and framing in its own
+// module. A unified envelope would make one format's blob a syntactically valid input to another
+// format's reader, which is a confusion this separation prevents for free. Sharing only the
+// derivation, never the envelope, is the design, not an oversight to "fix" by merging.
 //
-// WHAT IS DELIBERATELY NOT SHARED: the envelope. HD1 keeps its own magic bytes, its own version
-// handling and its own framing in its own module — a sibling format should do the same in its own.
-// A unified envelope would make a foreign blob a syntactically valid input to this package's vault
-// reader, which is a confusion this separation prevents for free. If you are here to "finish the
-// job" by merging formats — that is the bug this comment exists to stop.
-//
-// RUNTIME-AGNOSTIC BY CONSTRUCTION: this module imports nothing and touches no global. One caller is
-// Node-only (`node:crypto`'s webcrypto), the others run in the browser and in Workers, so the
-// `SubtleCrypto` is passed in rather than reached for. That also makes the parameters testable
-// without a runtime shim.
+// RUNTIME-AGNOSTIC BY CONSTRUCTION: this module imports nothing and touches no global. Callers run
+// in Node, the browser, and Workers alike, so the `SubtleCrypto` instance is passed in rather than
+// reached for globally. That also makes the parameters testable without a runtime shim.
 
 import { toArrayBuffer } from "./bytes";
 
@@ -56,8 +48,8 @@ export async function deriveAesKey(
 }
 
 /**
- * PBKDF2-SHA256 → raw bits, for a derivation whose output is not itself a key — health-dash's
- * server-verifiable auth hash. Separate entry point rather than a flag on `deriveAesKey`, because a
+ * PBKDF2-SHA256 → raw bits, for a derivation whose output is not itself a key — this package's own
+ * server-verifiable auth hash (see `crypto.ts`'s `deriveAuthHash`). Separate entry point rather than a flag on `deriveAesKey`, because a
  * function that sometimes returns exportable bytes and sometimes an unexportable key is exactly the
  * kind of thing a reviewer has to read twice.
  */

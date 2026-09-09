@@ -70,7 +70,7 @@ export async function getAccountByEmail(db: D1Database, email: string): Promise<
 /**
  * The instant before which this account's session cookies are no longer accepted, or null.
  *
- * Read on every authenticated request, by the adopter's own session-check middleware. One indexed lookup by primary
+ * Read on every authenticated request (see `requireSession`). One indexed lookup by primary
  * key is what buys revocability: the cookie is self-contained, so without a server-side fact to
  * check against, nothing short of rotating SESSION_SECRET for the entire deployment can invalidate one.
  */

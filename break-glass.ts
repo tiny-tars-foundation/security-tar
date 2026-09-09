@@ -1,9 +1,8 @@
-// The time-boxed "support agent gets temporary access, then it lapses or is pulled" pattern. It
-// exists because this package's first adopter had several routes that each hardcoded their own TTL
-// clamp, consent-string prefix, and audit shape — one for granting with an envelope, one for
-// granting metadata-only access, one for checking/expiring, one for revoking. Centralizing the
-// pattern here means every one of those routes shares the same TTL clamp, consent format, and audit
-// trail instead of drifting independently.
+// The time-boxed "support agent gets temporary access, then it lapses or is pulled" pattern, factored
+// out of routes that would otherwise each hardcode their own TTL clamp, consent-string prefix, and
+// audit shape: a grant-with-envelope route, a grant-metadata-only route, a check/expire route, and a
+// revoke route. Parameterized TTL rather than a fixed default, so an adopter with different
+// access-window needs isn't stuck with ours.
 
 import type { AuditStore, EnvelopeStore, ProviderLink, ProviderLinkStore } from "./stores";
 

@@ -6,7 +6,7 @@ export type { AccessEvent };
 // bookkeeping are app-specific concerns that stay in the app's identity-audit.ts (see stores.ts's
 // own docstring on AuditStore).
 
-// FTC-HBNR (§I) PHI-access/disclosure audit log. Records WHO (actor) accessed WHOSE (subject)
+// FTC Health Breach Notification Rule PHI-access/disclosure audit log. Records WHO (actor) accessed WHOSE (subject)
 // vault and WHY (action + consent_ref), so a breach can be scoped to affected individuals. NO PHI.
 interface AccessEventRow {
   id: string;

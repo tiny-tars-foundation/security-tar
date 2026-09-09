@@ -1,8 +1,8 @@
 import { toArrayBuffer as toAB } from "./bytes";
 import { deriveAesKey, deriveBits, IV_LEN, SALT_LEN } from "./kdf";
 
-// HD1 is this app's own envelope and stays here. Only the derivation is shared with the QBO vault's
-// EB1 — see the header of @tinytars/vault/kdf for why the two formats must NOT be merged.
+// HD1 is this package's own envelope and stays here. Only the derivation is shared with a sibling
+// encrypted-blob format elsewhere — see kdf.ts's header for why the two formats must NOT be merged.
 const MAGIC = new Uint8Array([0x48, 0x44, 0x31]); // "HD1"
 const VERSION = 1;
 
@@ -12,18 +12,22 @@ const dec = new TextDecoder();
 
 const deriveKey = (passphrase: string, salt: Uint8Array) => deriveAesKey(subtle, passphrase, salt);
 
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 // Deterministic, non-reversible bearer derived from the passphrase: base64url(SHA-256).
 //
-// This is a generator for a stable, non-reversible token an adopter can use to gate a script or an
-// allowlisted bearer-token integration off the same passphrase used for the interactive login path,
-// without storing the passphrase itself anywhere. It is not session auth — an interactive route
-// should be protected by a real session cookie/token, not a static bearer derived here. Keep this
-// only for a script-facing bearer allowlist you still rely on; drop it once you don't.
+// A stable, non-reversible token an adopter can hand to a script or an allowlisted bearer-token
+// integration gated off the same passphrase used for the interactive login path, without storing
+// the passphrase itself anywhere. Not session auth — an interactive route should be protected by a
+// real session cookie/token, not a static bearer derived here. Keep this only for a script-facing
+// bearer allowlist you still rely on; drop it once you don't.
 export async function deriveBearerToken(passphrase: string): Promise<string> {
   const digest = new Uint8Array(await subtle.digest("SHA-256", toAB(enc.encode(passphrase))));
-  let bin = "";
-  for (const b of digest) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return bytesToBase64Url(digest);
 }
 
 export async function encryptVault<T = Record<string, unknown>>(data: T, passphrase: string): Promise<Uint8Array> {
@@ -114,9 +118,7 @@ export async function deriveAuthHash(password: string, salt: Uint8Array): Promis
   domainSalt.set(salt, 0);
   domainSalt.set(suffix, salt.length);
   const bits = await deriveBits(subtle, password, domainSalt);
-  let bin = "";
-  for (const b of bits) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return bytesToBase64Url(bits);
 }
 
 // Wrap/unwrap the account private key under a KEK: AES-GCM over its PKCS8 bytes. Blob = iv(12)+ct.
@@ -139,18 +141,17 @@ export async function unwrapPrivateKey(blob: Uint8Array, kek: CryptoKey): Promis
   } catch {
     throw new Error("cannot unwrap private key (wrong KEK or corrupt blob)");
   }
-  // Extractable so an authorized holder can RE-WRAP it — needed to add a login method or regenerate a
-  // recovery code, both of which wrap this same key under a new KEK. Same rationale/posture as the
+  // Extractable so an authorized holder can RE-WRAP it — needed to add a login method or regenerate the
+  // recovery code, which wraps this same key under a new KEK. Same rationale/posture as the
   // DEK returned by unwrapDEKWithPrivateKey (also extractable for re-granting). The key stays in-memory
   // only, same trust boundary as the session's DEK.
   return subtle.importKey("pkcs8", pkcs8, EC_PARAMS, true, ["deriveKey", "deriveBits"]);
 }
 
 // Import a raw PKCS8 ECDH private key (extractable, so it can be re-wrapped to add a login method —
-// same trust boundary as unwrapPrivateKey's output). A server-custody login path (e.g. SSO, where
-// the server itself bootstraps the session) moves the plaintext key over the wire instead of a
-// KEK-wrapped blob, so both server (re-wrap under the server KEK) and client (recover the DEK)
-// import it here rather than unwrapping.
+// same trust boundary as unwrapPrivateKey's output). A federated-login path that moves the plaintext key
+// over the wire (server-custody) needs both server (re-wrap under the server KEK) and client (recover
+// the DEK) to import it here instead of unwrapping a KEK-wrapped blob.
 export async function importPrivateKeyPkcs8(pkcs8: Uint8Array): Promise<CryptoKey> {
   return subtle.importKey("pkcs8", toAB(pkcs8), EC_PARAMS, true, ["deriveKey", "deriveBits"]);
 }

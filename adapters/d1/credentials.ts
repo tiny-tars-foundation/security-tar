@@ -99,8 +99,8 @@ export async function getCredential(db: D1Database, accountId: string, method: A
   return row ? mapCredential(row) : null;
 }
 
-// The account's key-bearing methods (password/passkey/recovery), for the account-settings screen and
-// the "don't orphan the vault key on remove" invariant. The credentials table is the source of truth (each
+// The account's key-bearing methods (password/passkey/recovery), for the Account screen and the
+// "don't orphan the vault key on remove" invariant. The credentials table is the source of truth (each
 // row independently wraps the same private key); identities lacks a recovery row.
 export async function listCredentials(db: D1Database, accountId: string): Promise<{ method: AuthMethod; createdAt: string }[]> {
   const { results } = await db
