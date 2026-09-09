@@ -1,14 +1,14 @@
 import type { BlobStore, BlobConditional, StoredBlob } from "../blob-store";
 
 // Minimal structural type for the R2 binding — no @cloudflare/workers-types dependency, and
-// trivially mockable in tests. Moved from apps/health-dash-web/functions/api/vault/[id].ts, which
-// now imports R2Bucket/R2BlobStore from here instead of declaring its own copy.
+// trivially mockable in tests. An adopter's own Pages Function route should import R2Bucket/
+// R2BlobStore from here instead of declaring its own copy.
 export interface R2ObjectBody {
   body: ReadableStream;
-  /** W70 — the version token. Handed to the browser on GET and sent back as If-Match on PUT. */
+  /** The version token. Handed to the browser on GET and sent back as If-Match on PUT. */
   etag: string;
 }
-/** A precondition on a write. Verified against real workerd in tests/unit/r2-conditional-put.test.ts. */
+/** A precondition on a write. Verify this against real `workerd` in an adopter's own test suite — see ARCHITECTURE.md's "Adapters" section. */
 export interface R2Conditional {
   etagMatches?: string;
   etagDoesNotMatch?: string;

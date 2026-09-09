@@ -99,8 +99,8 @@ export async function getCredential(db: D1Database, accountId: string, method: A
   return row ? mapCredential(row) : null;
 }
 
-// W44 P8 — the account's key-bearing methods (password/passkey/recovery), for the Account screen and the
-// "don't orphan the vault key on remove" invariant. The credentials table is the source of truth (each
+// The account's key-bearing methods (password/passkey/recovery), for the account-settings screen and
+// the "don't orphan the vault key on remove" invariant. The credentials table is the source of truth (each
 // row independently wraps the same private key); identities lacks a recovery row.
 export async function listCredentials(db: D1Database, accountId: string): Promise<{ method: AuthMethod; createdAt: string }[]> {
   const { results } = await db
@@ -118,7 +118,7 @@ export async function deleteIdentity(db: D1Database, accountId: string, method: 
   await db.prepare("DELETE FROM identities WHERE account_id = ? AND method = ?").bind(accountId, method).run();
 }
 
-// W44 P3 — bump the passkey authenticator's signature counter after a successful login
+// Bump the passkey authenticator's signature counter after a successful login
 // (replay-attack detection). Merges into the existing kdf_params rather than a raw column
 // update so the wrapped key row stays a single INSERT OR REPLACE-shaped record.
 export async function updatePasskeyCounter(db: D1Database, accountId: string, counter: number): Promise<void> {

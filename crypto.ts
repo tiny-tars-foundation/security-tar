@@ -14,10 +14,11 @@ const deriveKey = (passphrase: string, salt: Uint8Array) => deriveAesKey(subtle,
 
 // Deterministic, non-reversible bearer derived from the passphrase: base64url(SHA-256).
 //
-// No longer called from the browser: it gated /api/chat and /api/raw via CHAT_TOKEN/RAW_TOKEN
-// until those routes moved to requireSession, and both secrets were deleted 2026-08-26. It is
-// still the generator for the one bearer allowlist that survives — scripts/chat-allowlist.ts
-// prints the VAULT_TOKEN value, which vault/[id].ts:73,155 checks and scripts/vault-sync.ts sends.
+// This is a generator for a stable, non-reversible token an adopter can use to gate a script or an
+// allowlisted bearer-token integration off the same passphrase used for the interactive login path,
+// without storing the passphrase itself anywhere. It is not session auth — an interactive route
+// should be protected by a real session cookie/token, not a static bearer derived here. Keep this
+// only for a script-facing bearer allowlist you still rely on; drop it once you don't.
 export async function deriveBearerToken(passphrase: string): Promise<string> {
   const digest = new Uint8Array(await subtle.digest("SHA-256", toAB(enc.encode(passphrase))));
   let bin = "";
@@ -67,7 +68,7 @@ export async function decryptVault<T = Record<string, unknown>>(blob: Uint8Array
   return JSON.parse(dec.decode(plaintext)) as T;
 }
 
-// ── W44 envelope encryption (v2) ─────────────────────────────────────────────
+// ── Envelope encryption (v2) ──────────────────────────────────────────────────
 // v1 above (passphrase → PBKDF2 → AES key → blob) is untouched. v2 splits the key:
 // a random per-vault DEK encrypts the blob, and the DEK is wrapped per principal
 // (owner, provider, support) to their ECDH public key. The passphrase path is gone;
@@ -138,17 +139,18 @@ export async function unwrapPrivateKey(blob: Uint8Array, kek: CryptoKey): Promis
   } catch {
     throw new Error("cannot unwrap private key (wrong KEK or corrupt blob)");
   }
-  // Extractable so an authorized holder can RE-WRAP it — needed to add a login method or regenerate the
-  // recovery code (W44 P8/P8b), which wrap this same key under a new KEK. Same rationale/posture as the
+  // Extractable so an authorized holder can RE-WRAP it — needed to add a login method or regenerate a
+  // recovery code, both of which wrap this same key under a new KEK. Same rationale/posture as the
   // DEK returned by unwrapDEKWithPrivateKey (also extractable for re-granting). The key stays in-memory
   // only, same trust boundary as the session's DEK.
   return subtle.importKey("pkcs8", pkcs8, EC_PARAMS, true, ["deriveKey", "deriveBits"]);
 }
 
 // Import a raw PKCS8 ECDH private key (extractable, so it can be re-wrapped to add a login method —
-// same trust boundary as unwrapPrivateKey's output). W45: the Google path moves the plaintext key
-// over the wire (server-custody), so both server (re-wrap under the server KEK) and client (recover
-// the DEK) import it here instead of unwrapping a KEK-wrapped blob.
+// same trust boundary as unwrapPrivateKey's output). A server-custody login path (e.g. SSO, where
+// the server itself bootstraps the session) moves the plaintext key over the wire instead of a
+// KEK-wrapped blob, so both server (re-wrap under the server KEK) and client (recover the DEK)
+// import it here rather than unwrapping.
 export async function importPrivateKeyPkcs8(pkcs8: Uint8Array): Promise<CryptoKey> {
   return subtle.importKey("pkcs8", toAB(pkcs8), EC_PARAMS, true, ["deriveKey", "deriveBits"]);
 }
@@ -204,7 +206,7 @@ export async function unwrapDEKWithPrivateKey(
   return subtle.importKey("raw", raw, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
 }
 
-// W73 — the DEK wrapped under a KEK, for a provider-issued recovery grant.
+// The DEK wrapped under a KEK, for a provider-issued recovery grant.
 //
 // The raw-key twin of wrapPrivateKey/unwrapPrivateKey above: same AES-GCM, same iv‖ct blob shape, same
 // reasoning. It exists because a recovery grant hands the DEK to a one-time code rather than to a

@@ -1,8 +1,9 @@
-// The time-boxed "support agent gets temporary access, then it lapses or is pulled" pattern, used by
-// three routes that used to each hardcode their own TTL clamp, consent-string prefix, and audit shape:
-// functions/api/support/approve.ts (grant, with envelope), functions/api/providers/approve-support.ts
-// (grant, metadata-only), functions/api/support/access.ts (check/expire), and
-// functions/api/providers/[link].ts (revoke). See docs/cross-app/10-open-source-info-security.md step 5.
+// The time-boxed "support agent gets temporary access, then it lapses or is pulled" pattern. It
+// exists because this package's first adopter had several routes that each hardcoded their own TTL
+// clamp, consent-string prefix, and audit shape — one for granting with an envelope, one for
+// granting metadata-only access, one for checking/expiring, one for revoking. Centralizing the
+// pattern here means every one of those routes shares the same TTL clamp, consent format, and audit
+// trail instead of drifting independently.
 
 import type { AuditStore, EnvelopeStore, ProviderLink, ProviderLinkStore } from "./stores";
 
