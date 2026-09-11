@@ -164,14 +164,14 @@ export function runProviderLinkStoreConformance(label: string, factory: () => Pr
   describe(`ProviderLinkStore conformance (${label})`, () => {
     it("creates a link, defaulting status to invited", async () => {
       const store = await factory();
-      const link = await store.create({ patientAccountId: "p1", providerAccountId: "d1", role: "clinician", grantedBy: "p1" });
+      const link = await store.create({ ownerAccountId: "p1", providerAccountId: "d1", role: "primary", grantedBy: "p1" });
       expect(link.status).toBe("invited");
       expect(await store.get(link.id)).toEqual(link);
     });
 
     it("getActive is null for an invited (non-active) link", async () => {
       const store = await factory();
-      const link = await store.create({ patientAccountId: "p1", providerAccountId: "d1", role: "clinician", grantedBy: "p1" });
+      const link = await store.create({ ownerAccountId: "p1", providerAccountId: "d1", role: "primary", grantedBy: "p1" });
       expect(await store.getActive("p1", "d1")).toBeNull();
       await store.updateStatus(link.id, "active");
       expect((await store.getActive("p1", "d1"))?.id).toBe(link.id);
@@ -179,14 +179,14 @@ export function runProviderLinkStoreConformance(label: string, factory: () => Pr
 
     it("getActive is null once expiresAt is in the past", async () => {
       const store = await factory();
-      const link = await store.create({ patientAccountId: "p1", providerAccountId: "d1", role: "support", grantedBy: "p1", status: "active", expiresAt: "2000-01-01T00:00:00.000Z" });
+      const link = await store.create({ ownerAccountId: "p1", providerAccountId: "d1", role: "support", grantedBy: "p1", status: "active", expiresAt: "2000-01-01T00:00:00.000Z" });
       expect(link.status).toBe("active");
       expect(await store.getActive("p1", "d1")).toBeNull();
     });
 
     it("grantSupport activates and time-boxes a link", async () => {
       const store = await factory();
-      const link = await store.create({ patientAccountId: "p1", providerAccountId: "d1", role: "support", grantedBy: "p1" });
+      const link = await store.create({ ownerAccountId: "p1", providerAccountId: "d1", role: "support", grantedBy: "p1" });
       const expiresAt = new Date(Date.now() + 3600_000).toISOString();
       await store.grantSupport(link.id, { expiresAt, consentRef: "consent-1" });
       const after = await store.get(link.id);
@@ -194,12 +194,12 @@ export function runProviderLinkStoreConformance(label: string, factory: () => Pr
       expect(after?.expiresAt).toBe(expiresAt);
     });
 
-    it("listForPatient / listForProvider scope correctly", async () => {
+    it("listForOwner / listForProvider scope correctly", async () => {
       const store = await factory();
-      await store.create({ patientAccountId: "p1", providerAccountId: "d1", role: "clinician", grantedBy: "p1" });
-      await store.create({ patientAccountId: "p1", providerAccountId: "d2", role: "clinician", grantedBy: "p1" });
-      await store.create({ patientAccountId: "p2", providerAccountId: "d1", role: "clinician", grantedBy: "p2" });
-      expect(await store.listForPatient("p1")).toHaveLength(2);
+      await store.create({ ownerAccountId: "p1", providerAccountId: "d1", role: "primary", grantedBy: "p1" });
+      await store.create({ ownerAccountId: "p1", providerAccountId: "d2", role: "primary", grantedBy: "p1" });
+      await store.create({ ownerAccountId: "p2", providerAccountId: "d1", role: "primary", grantedBy: "p2" });
+      expect(await store.listForOwner("p1")).toHaveLength(2);
       expect(await store.listForProvider("d1")).toHaveLength(2);
     });
   });

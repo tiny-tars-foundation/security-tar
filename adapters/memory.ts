@@ -266,10 +266,10 @@ export class MemoryEnvelopeStore implements EnvelopeStore {
 export class MemoryProviderLinkStore implements ProviderLinkStore {
   private links = new Map<string, ProviderLink>();
 
-  async create(l: { patientAccountId: string; providerAccountId: string; role: ProviderKind; status?: LinkStatus; consentRef?: string | null; grantedBy: string; expiresAt?: string | null; id?: string }): Promise<ProviderLink> {
+  async create(l: { ownerAccountId: string; providerAccountId: string; role: ProviderKind; status?: LinkStatus; consentRef?: string | null; grantedBy: string; expiresAt?: string | null; id?: string }): Promise<ProviderLink> {
     const link: ProviderLink = {
       id: l.id ?? crypto.randomUUID(),
-      patientAccountId: l.patientAccountId,
+      ownerAccountId: l.ownerAccountId,
       providerAccountId: l.providerAccountId,
       role: l.role,
       status: l.status ?? "invited",
@@ -300,17 +300,17 @@ export class MemoryProviderLinkStore implements ProviderLinkStore {
     return l ? { ...l } : null;
   }
 
-  async listForPatient(patientAccountId: string): Promise<ProviderLink[]> {
-    return [...this.links.values()].filter((l) => l.patientAccountId === patientAccountId).map((l) => ({ ...l }));
+  async listForOwner(ownerAccountId: string): Promise<ProviderLink[]> {
+    return [...this.links.values()].filter((l) => l.ownerAccountId === ownerAccountId).map((l) => ({ ...l }));
   }
 
   async listForProvider(providerAccountId: string): Promise<ProviderLink[]> {
     return [...this.links.values()].filter((l) => l.providerAccountId === providerAccountId).map((l) => ({ ...l }));
   }
 
-  async getActive(patientAccountId: string, providerAccountId: string): Promise<ProviderLink | null> {
+  async getActive(ownerAccountId: string, providerAccountId: string): Promise<ProviderLink | null> {
     const link = [...this.links.values()].find(
-      (l) => l.patientAccountId === patientAccountId && l.providerAccountId === providerAccountId
+      (l) => l.ownerAccountId === ownerAccountId && l.providerAccountId === providerAccountId
     );
     if (!link || link.status !== "active") return null;
     if (link.expiresAt && Date.parse(link.expiresAt) <= Date.now()) return null;

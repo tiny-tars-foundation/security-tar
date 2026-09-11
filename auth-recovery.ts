@@ -162,7 +162,7 @@ export async function recoverAccount(
 // Regenerate the recovery code (owner session): re-wrap the in-memory private key under a fresh code +
 // store the verifier. Returns the new code to display once.
 // ── Provider-issued recovery ──────────────────────────────────────────────────
-// Apple's recovery-contact model: a clinician who already holds the patient's DEK re-wraps it under a
+// Apple's recovery-contact model: a provider who already holds the owner's DEK re-wraps it under a
 // one-time code and READS THE CODE TO THEM. It is never emailed — see RECOVERY.md I2; the server would
 // have to be given the code, and it already holds the wrapped DEK.
 
@@ -191,11 +191,11 @@ export function detectRecoveryKind(raw: string): "code" | "grant" {
 }
 
 /**
- * Clinician side. Unwraps the patient's DEK with the clinician's own key — which is what provider
+ * Provider side. Unwraps the owner's DEK with the provider's own key — which is what provider
  * access already is — and re-wraps it under the code. Returns the code to display once.
  */
 export async function issueRecoveryCode(
-  patientAccountId: string,
+  ownerAccountId: string,
   envelope: { wrappedDEK: string; ephemeralPublicKeyJwk: JsonWebKey },
   providerKey: CryptoKey,
 ): Promise<{ code: string; expiresAt: string }> {
@@ -207,7 +207,7 @@ export async function issueRecoveryCode(
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      patientAccountId,
+      ownerAccountId,
       wrappedDek: bytesToBase64(await wrapDEKWithKek(dek, await deriveKekFromPassword(normalized, salt))),
       kdfParams: { salt: bytesToHex(salt), iterations: KDF_ITERATIONS },
       codeAuthHash: await deriveAuthHash(normalized, salt),
@@ -218,12 +218,12 @@ export async function issueRecoveryCode(
 }
 
 /**
- * Patient side. Two calls against the same endpoint: the first proves the code and returns the wrapped
+ * Owner side. Two calls against the same endpoint: the first proves the code and returns the wrapped
  * DEK, the second installs a brand-new keypair locked under the new password. The code is proved on
  * both — the second is not authorised by the first having happened.
  *
  * Unlike `recoverAccount`, this MINTS A NEW KEYPAIR rather than re-wrapping the old one, because the
- * old private key is exactly what the patient no longer has. That is why the server clears the other
+ * old private key is exactly what the owner no longer has. That is why the server clears the other
  * credentials: they wrap a key nothing references any more.
  */
 export async function redeemRecoveryCode(

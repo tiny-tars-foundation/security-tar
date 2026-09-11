@@ -6,7 +6,7 @@
 
 export type LifecycleStage = "waitlist" | "lead" | "active" | "paying" | "churned";
 export type AuthMethod = "passkey" | "google" | "password" | "recovery";
-export type ProviderKind = "clinician" | "support";
+export type ProviderKind = "primary" | "support";
 export type LinkStatus = "invited" | "active" | "revoked";
 export type UnitSystem = "metric" | "imperial";
 
@@ -74,18 +74,18 @@ export interface EnvelopeInput {
 
 export interface ProviderLink {
   id: string;
-  patientAccountId: string;
+  ownerAccountId: string;
   providerAccountId: string;
   role: ProviderKind;
   status: LinkStatus;
   consentRef: string | null;
   grantedBy: string;
   grantedAt: string;
-  /** Set on time-boxed support grants; null for clinician links. */
+  /** Set on time-boxed support grants; null for primary links. */
   expiresAt: string | null;
 }
 
-/** A PHI-access audit-log entry — who touched whose vault, and why. */
+/** A consent-scoped access audit-log entry — who touched whose vault, and why. */
 export interface AccessEvent {
   id: string;
   actorAccountId: string;
@@ -159,7 +159,7 @@ export interface EnvelopeStore {
 
 export interface ProviderLinkStore {
   create(l: {
-    patientAccountId: string;
+    ownerAccountId: string;
     providerAccountId: string;
     role: ProviderKind;
     status?: LinkStatus;
@@ -171,15 +171,16 @@ export interface ProviderLinkStore {
   updateStatus(id: string, status: LinkStatus): Promise<void>;
   grantSupport(id: string, opts: { expiresAt: string | null; consentRef?: string | null }): Promise<void>;
   get(id: string): Promise<ProviderLink | null>;
-  listForPatient(patientAccountId: string): Promise<ProviderLink[]>;
+  listForOwner(ownerAccountId: string): Promise<ProviderLink[]>;
   listForProvider(providerAccountId: string): Promise<ProviderLink[]>;
-  /** The active, unexpired link between this patient and provider, or null. */
-  getActive(patientAccountId: string, providerAccountId: string): Promise<ProviderLink | null>;
+  /** The active, unexpired link between this owner and provider, or null. */
+  getActive(ownerAccountId: string, providerAccountId: string): Promise<ProviderLink | null>;
 }
 
 /**
- * The PHI-access half of an adopter's audit trail only. Lifecycle/CRM events and raw-object
- * ownership bookkeeping are app-specific concerns that don't belong in a portable security package.
+ * The consent-scoped access-event half of an adopter's audit trail only. Lifecycle/CRM events and
+ * raw-object ownership bookkeeping are app-specific concerns that don't belong in a portable
+ * security package.
  */
 export interface AuditStore {
   insertAccessEvent(e: { actorAccountId: string; subjectAccountId: string; vaultId?: string | null; action: string; consentRef?: string | null; meta?: unknown; id?: string }): Promise<AccessEvent>;

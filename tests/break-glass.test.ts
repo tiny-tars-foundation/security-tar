@@ -10,12 +10,12 @@ const POLICY: BreakGlassPolicy = { defaultTtlHours: 72, maxTtlHours: 720 };
 function makeLink(overrides: Partial<ProviderLink> = {}): ProviderLink {
   return {
     id: "link-1",
-    patientAccountId: "patient-1",
+    ownerAccountId: "owner-1",
     providerAccountId: "provider-1",
     role: "support",
     status: "invited",
     consentRef: null,
-    grantedBy: "patient-1",
+    grantedBy: "owner-1",
     grantedAt: new Date().toISOString(),
     expiresAt: null,
     ...overrides,
@@ -82,10 +82,10 @@ describe("grantBreakGlass", () => {
       { links, audit },
       {
         linkId: "link-1",
-        approverAccountId: "patient-1",
+        approverAccountId: "owner-1",
         requestedTtlHours: 999999,
         policy: POLICY,
-        consentPrefix: "patient-approved",
+        consentPrefix: "owner-approved",
         auditAction: "support_access_granted",
         buildAuditMeta: (expiresAt, link) => ({ providerAccountId: link.providerAccountId, expiresAt }),
       }
@@ -97,7 +97,7 @@ describe("grantBreakGlass", () => {
     expect(expiresAt).toBeLessThanOrEqual(before + POLICY.maxTtlHours * 3600 * 1000 + 5000);
     expect(expiresAt).toBeGreaterThan(before + (POLICY.maxTtlHours - 1) * 3600 * 1000);
     expect((await links.get("link-1"))?.status).toBe("active");
-    expect(audit.events[0]?.consentRef).toMatch(/^patient-approved:/);
+    expect(audit.events[0]?.consentRef).toMatch(/^owner-approved:/);
   });
 
   it("falls back to the default TTL when none is requested", async () => {
@@ -108,7 +108,7 @@ describe("grantBreakGlass", () => {
       { links, audit: new FakeAuditStore() },
       {
         linkId: "link-1",
-        approverAccountId: "patient-1",
+        approverAccountId: "owner-1",
         requestedTtlHours: undefined,
         policy: POLICY,
         consentPrefix: "provider-approved",
@@ -125,15 +125,15 @@ describe("grantBreakGlass", () => {
   });
 
   it("rejects a link that isn't the approver's own pending support request", async () => {
-    const links = new FakeLinkStore([makeLink({ patientAccountId: "someone-else" })]);
+    const links = new FakeLinkStore([makeLink({ ownerAccountId: "someone-else" })]);
     const result = await grantBreakGlass(
       { links, audit: new FakeAuditStore() },
       {
         linkId: "link-1",
-        approverAccountId: "patient-1",
+        approverAccountId: "owner-1",
         requestedTtlHours: undefined,
         policy: POLICY,
-        consentPrefix: "patient-approved",
+        consentPrefix: "owner-approved",
         auditAction: "support_access_granted",
         buildAuditMeta: (expiresAt) => ({ expiresAt }),
       }
@@ -150,10 +150,10 @@ describe("grantBreakGlass", () => {
       { links, audit, envelopes },
       {
         linkId: "link-1",
-        approverAccountId: "patient-1",
+        approverAccountId: "owner-1",
         requestedTtlHours: undefined,
         policy: POLICY,
-        consentPrefix: "patient-approved",
+        consentPrefix: "owner-approved",
         auditAction: "support_access_granted",
         envelope: { vaultId: "vault-1", wrappedDek: new Uint8Array([1]), ephemeralPublicKeyJwk: {} },
         buildAuditMeta: (expiresAt, link) => ({ providerAccountId: link.providerAccountId, expiresAt }),
@@ -169,7 +169,7 @@ describe("grantBreakGlass", () => {
       { links: links2, audit: audit2 },
       {
         linkId: "link-1",
-        approverAccountId: "patient-1",
+        approverAccountId: "owner-1",
         requestedTtlHours: undefined,
         policy: POLICY,
         consentPrefix: "provider-approved",
@@ -190,7 +190,7 @@ describe("checkBreakGlass", () => {
       {
         link: (await links.get("link-1"))!,
         actorAccountId: "provider-1",
-        subjectAccountId: "patient-1",
+        subjectAccountId: "owner-1",
         vaultId: "vault-1",
         expiredAuditAction: "support_access_expired",
       }
@@ -201,7 +201,7 @@ describe("checkBreakGlass", () => {
   });
 
   it("self-revokes and audits an expired grant, running onExpire first", async () => {
-    const expiredLink = makeLink({ status: "active", expiresAt: new Date(Date.now() - 1000).toISOString(), consentRef: "patient-approved:x" });
+    const expiredLink = makeLink({ status: "active", expiresAt: new Date(Date.now() - 1000).toISOString(), consentRef: "owner-approved:x" });
     const links = new FakeLinkStore([expiredLink]);
     const audit = new FakeAuditStore();
     const envelopes = new FakeEnvelopeStore();
@@ -212,7 +212,7 @@ describe("checkBreakGlass", () => {
       {
         link: expiredLink,
         actorAccountId: "provider-1",
-        subjectAccountId: "patient-1",
+        subjectAccountId: "owner-1",
         vaultId: "vault-1",
         expiredAuditAction: "support_access_expired",
         onExpire: async () => {
@@ -226,7 +226,7 @@ describe("checkBreakGlass", () => {
     expect((await links.get("link-1"))?.status).toBe("revoked");
     expect(envelopes.envelopes.has("vault-1:provider-1")).toBe(false);
     expect(envelopes.rotationPending.get("vault-1")).toBe(true);
-    expect(audit.events[0]).toMatchObject({ action: "support_access_expired", consentRef: "patient-approved:x" });
+    expect(audit.events[0]).toMatchObject({ action: "support_access_expired", consentRef: "owner-approved:x" });
   });
 });
 
@@ -241,8 +241,8 @@ describe("revokeBreakGlass", () => {
       { links, audit, envelopes },
       {
         linkId: "link-1",
-        actorAccountId: "patient-1",
-        subjectAccountId: "patient-1",
+        actorAccountId: "owner-1",
+        subjectAccountId: "owner-1",
         providerAccountId: "provider-1",
         vaultId: "vault-1",
         auditAction: "support_access_denied",
@@ -255,15 +255,15 @@ describe("revokeBreakGlass", () => {
     expect(audit.events).toHaveLength(1);
   });
 
-  it("skips the audit when no auditAction is given (a clinician link)", async () => {
-    const links = new FakeLinkStore([makeLink({ role: "clinician", status: "active" })]);
+  it("skips the audit when no auditAction is given (a primary link)", async () => {
+    const links = new FakeLinkStore([makeLink({ role: "primary", status: "active" })]);
     const audit = new FakeAuditStore();
     await revokeBreakGlass(
       { links, audit },
       {
         linkId: "link-1",
-        actorAccountId: "patient-1",
-        subjectAccountId: "patient-1",
+        actorAccountId: "owner-1",
+        subjectAccountId: "owner-1",
         providerAccountId: "provider-1",
         vaultId: null,
       }
@@ -280,8 +280,8 @@ describe("revokeBreakGlass", () => {
 
     const opts = {
       linkId: "link-1",
-      actorAccountId: "patient-1",
-      subjectAccountId: "patient-1",
+      actorAccountId: "owner-1",
+      subjectAccountId: "owner-1",
       providerAccountId: "provider-1",
       vaultId: "vault-1",
       auditAction: "support_access_denied",

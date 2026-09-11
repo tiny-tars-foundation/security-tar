@@ -166,9 +166,9 @@ rows in:
   different backend (e.g. a WebAuthn authenticator registry) than the account row itself.
 - **`EnvelopeStore`** — vault rows and their envelopes, pure storage: get/put an envelope by
   vault ID, nothing about who's allowed to.
-- **`ProviderLinkStore`** — grants between principals (a "provider" linked to a "patient", in the
-  vocabulary this package's first adopter uses — read it generically as "grantee linked to
-  vault owner"). See § Principal model below for how this fits owner and org-recovery access.
+- **`ProviderLinkStore`** — grants between a "provider" (grantee) and a vault owner. See
+  `README.md`'s **Why** section for the healthcare and beyond-health use cases this vocabulary
+  covers, and § Principal model below for how this fits owner and org-recovery access.
 - **`AuditStore`** — append-only access-event logging, read back by subject.
 
 None of these five types know about each other. Composing them into a policy is a separate,
@@ -251,7 +251,7 @@ of `ProviderLinkStore` and `AuditStore` (and `EnvelopeStore`, when the grant car
    can't outlive their TTL by simply not hitting that route.
 3. **Revoke.** Ends a link early from either side, idempotently: deletes the envelope (if any) and
    marks the link revoked, both safe to repeat. Auditing is conditional on `auditAction` being
-   supplied — some link kinds (e.g. a clinician link) carry no disclosure-audit obligation.
+   supplied — some link kinds (e.g. a primary link) carry no disclosure-audit obligation.
 
 All three are storage-agnostic — they take `Pick<...>` slices of `ProviderLinkStore`/
 `AuditStore`/`EnvelopeStore`, never a concrete adapter — and carry the same envelope-revocation
@@ -331,14 +331,14 @@ depends on `vault-session.ts`, for the `VaultSession` type its `ensureOrgRecover
 - **`auth-recovery.ts`** — the recovery-code ladder: a passphrase-style recovery code the owner
   mints in advance (`regenerateRecoveryCode`, redeemed by `recoverAccount`), and a provider-issued,
   read-down-the-phone grant code (`issueRecoveryCode`/`redeemRecoveryCode`) for the case where the
-  owner has lost every credential and a clinician is re-establishing access on their behalf. Also
+  owner has lost every credential and a provider is re-establishing access on their behalf. Also
   DEK rotation (`getVaultPrincipals`/`stageVaultRotation`/`rotateVault`) and the account's
   access-event log fetch.
-- **`auth-support.ts`** — audited support-agent access: a patient approves a pending support
+- **`auth-support.ts`** — audited support-agent access: an owner approves a pending support
   request by wrapping their in-memory DEK to the agent's public key (time-boxed); a separate,
-  metadata-only path lets a support agent request roster access to a *provider's* patient list
-  through the same request/approve shape, without ever seeing a DEK.
-- **`auth-grants.ts`** — the patient-side half of provider access: look up a provider by email,
+  metadata-only path lets a support agent request roster access to a *provider's* linked-owner
+  list through the same request/approve shape, without ever seeing a DEK.
+- **`auth-grants.ts`** — the owner-side half of provider access: look up a provider by email,
   grant them the vault by wrapping the DEK to their public key, revoke.
 - **`org-recovery.ts`** — one function, `ensureOrgRecoveryEnvelope`, that backfills the
   org-recovery envelope (see `THREAT_MODEL.md`'s "org recovery principal") for a session that
@@ -365,7 +365,7 @@ enumerate to at that point.
 **Recovery has two independently-shaped codes, not one.** A 32-character alphabet excluding
 ambiguous characters (`0/O`, `1/I`) produces the owner's own 20-character recovery code; a
 Crockford-style alphabet produces a shorter, hyphen-grouped code meant to be read aloud down a
-phone line by a clinician who already holds the patient's DEK. `detectRecoveryKind()` routes a
+phone line by a provider who already holds the owner's DEK. `detectRecoveryKind()` routes a
 pasted/typed string between the two ladders by stripped length alone — no shared length makes the
 two ambiguous by construction. The shorter code is safe to read aloud specifically because the
 server (not this package) caps attempts and expires the grant within an hour; a client-side length

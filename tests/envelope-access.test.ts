@@ -39,11 +39,11 @@ function makeStores(vault: VaultRow | null, envelopes: Envelope[], links: Provid
     },
   };
   const providerLinkSource: ProviderLinkSource = {
-    async getActive(patientAccountId, providerAccountId) {
+    async getActive(ownerAccountId, providerAccountId) {
       return (
         links.find(
           (l) =>
-            l.patientAccountId === patientAccountId &&
+            l.ownerAccountId === ownerAccountId &&
             l.providerAccountId === providerAccountId &&
             l.status === "active",
         ) ?? null
@@ -56,9 +56,9 @@ function makeStores(vault: VaultRow | null, envelopes: Envelope[], links: Provid
 function makeLink(overrides: Partial<ProviderLink> = {}): ProviderLink {
   return {
     id: "link-1",
-    patientAccountId: "owner",
+    ownerAccountId: "owner",
     providerAccountId: "provider",
-    role: "clinician",
+    role: "primary",
     status: "active",
     consentRef: null,
     grantedBy: "owner",

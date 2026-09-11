@@ -157,14 +157,14 @@ export class D1ProviderLinkStore implements ProviderLinkStore {
   get(id: string) {
     return providers.getProviderLink(this.db, id);
   }
-  listForPatient(patientAccountId: string) {
-    return providers.listProvidersForPatient(this.db, patientAccountId);
+  listForOwner(ownerAccountId: string) {
+    return providers.listProvidersForOwner(this.db, ownerAccountId);
   }
   listForProvider(providerAccountId: string) {
-    return providers.listPatientsForProvider(this.db, providerAccountId);
+    return providers.listOwnersForProvider(this.db, providerAccountId);
   }
-  getActive(patientAccountId: string, providerAccountId: string) {
-    return providers.getActiveProviderLink(this.db, patientAccountId, providerAccountId);
+  getActive(ownerAccountId: string, providerAccountId: string) {
+    return providers.getActiveProviderLink(this.db, ownerAccountId, providerAccountId);
   }
 }
 

@@ -13,10 +13,14 @@ interface ProviderLinkRow {
   granted_at: string;
   expires_at: string | null;
 }
+// The `patient_account_id` column name is a legacy leftover from before this package's TS-facing
+// vocabulary was genericized to "owner" — renaming a live D1 column is a schema migration against
+// real production data, which that vocabulary cleanup had no reason to force. This mapping function
+// is the boundary that absorbs the difference; the TS-facing shape has never said "patient".
 function mapProviderLink(r: ProviderLinkRow): ProviderLink {
   return {
     id: r.id,
-    patientAccountId: r.patient_account_id,
+    ownerAccountId: r.patient_account_id,
     providerAccountId: r.provider_account_id,
     role: r.role,
     status: r.status,
@@ -30,7 +34,7 @@ function mapProviderLink(r: ProviderLinkRow): ProviderLink {
 export async function createProviderLink(
   db: D1Database,
   l: {
-    patientAccountId: string;
+    ownerAccountId: string;
     providerAccountId: string;
     role: ProviderKind;
     status?: LinkStatus;
@@ -49,11 +53,11 @@ export async function createProviderLink(
     .prepare(
       "INSERT INTO provider_links (id, patient_account_id, provider_account_id, role, status, consent_ref, granted_by, granted_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .bind(id, l.patientAccountId, l.providerAccountId, l.role, status, consentRef, l.grantedBy, grantedAt, expiresAt)
+    .bind(id, l.ownerAccountId, l.providerAccountId, l.role, status, consentRef, l.grantedBy, grantedAt, expiresAt)
     .run();
   return {
     id,
-    patientAccountId: l.patientAccountId,
+    ownerAccountId: l.ownerAccountId,
     providerAccountId: l.providerAccountId,
     role: l.role,
     status,
@@ -68,7 +72,7 @@ export async function updateProviderLinkStatus(db: D1Database, id: string, statu
   await db.prepare("UPDATE provider_links SET status = ? WHERE id = ?").bind(status, id).run();
 }
 
-// A patient approving a support request: flip the link active, stamp its time-box + consent.
+// An owner approving a support request: flip the link active, stamp its time-box + consent.
 export async function grantSupportLink(
   db: D1Database,
   id: string,
@@ -85,15 +89,15 @@ export async function getProviderLink(db: D1Database, id: string): Promise<Provi
   return row ? mapProviderLink(row) : null;
 }
 
-export async function listProvidersForPatient(db: D1Database, patientAccountId: string): Promise<ProviderLink[]> {
+export async function listProvidersForOwner(db: D1Database, ownerAccountId: string): Promise<ProviderLink[]> {
   const { results } = await db
     .prepare("SELECT * FROM provider_links WHERE patient_account_id = ?")
-    .bind(patientAccountId)
+    .bind(ownerAccountId)
     .all<ProviderLinkRow>();
   return results.map(mapProviderLink);
 }
 
-export async function listPatientsForProvider(db: D1Database, providerAccountId: string): Promise<ProviderLink[]> {
+export async function listOwnersForProvider(db: D1Database, providerAccountId: string): Promise<ProviderLink[]> {
   const { results } = await db
     .prepare("SELECT * FROM provider_links WHERE provider_account_id = ?")
     .bind(providerAccountId)
@@ -103,15 +107,15 @@ export async function listPatientsForProvider(db: D1Database, providerAccountId:
 
 export async function getActiveProviderLink(
   db: D1Database,
-  patientAccountId: string,
+  ownerAccountId: string,
   providerAccountId: string
 ): Promise<ProviderLink | null> {
   const link = await db
     .prepare("SELECT * FROM provider_links WHERE patient_account_id = ? AND provider_account_id = ?")
-    .bind(patientAccountId, providerAccountId)
+    .bind(ownerAccountId, providerAccountId)
     .first<ProviderLinkRow>();
   if (!link || link.status !== "active") return null;
-  // `expires_at` is set on time-boxed support grants and null for clinician links.
+  // `expires_at` is set on time-boxed support grants and null for primary links.
   if (link.expires_at && Date.parse(link.expires_at) <= Date.now()) return null;
   return mapProviderLink(link);
 }

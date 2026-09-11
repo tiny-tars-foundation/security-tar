@@ -6,7 +6,7 @@ import { decryptVaultV2 } from "./crypto";
  * agree by coincidence.
  */
 export interface VaultEntry {
-  patientAccountId: string;
+  ownerAccountId: string;
   displayName: string;
   email: string | null;
   r2Key: string;
@@ -23,7 +23,7 @@ export interface VaultSession {
    * re-wrap it when adding a login method. Null in a provider or support session.
    */
   readonly ownerKey: CryptoKey | null;
-  /** A provider account's private key, which unwraps each patient's envelope. Null for an owner. */
+  /** A provider account's private key, which unwraps each owner's envelope. Null for an owner. */
   readonly providerKey: CryptoKey | null;
   /** True only when a vault is genuinely open — derived, never tracked separately. */
   readonly isOpen: boolean;
@@ -37,8 +37,8 @@ export interface VaultSession {
   /**
    * Closes the open vault. Clears the data key and the id together.
    *
-   * Does NOT clear the provider key: a provider who leaves one patient is still signed in and still
-   * needs their own key to open the next. That asymmetry was already the behaviour of
+   * Does NOT clear the provider key: a provider who leaves one owner's vault is still signed in and
+   * still needs their own key to open the next. That asymmetry was already the behaviour of
    * `backToRoster()`; stating it here is what stops it being re-derived incorrectly later.
    */
   close(): void;
@@ -48,7 +48,7 @@ export interface VaultSession {
 
 /**
  * Decrypts a vault blob and opens the session on it in one step, shared by every path that unlocks
- * a vault — the signed-in owner's own, and a provider's drill-in to a patient's. `fetchBlob` stays a
+ * a vault — the signed-in owner's own, and a provider's drill-in to an owner's. `fetchBlob` stays a
  * caller-supplied thunk because fetching it (the R2 route, the ETag it must remember for later saves)
  * is app-local, not frame-generic.
  */

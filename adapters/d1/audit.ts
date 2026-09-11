@@ -2,12 +2,15 @@ import type { D1Database } from "./types";
 import type { AccessEvent } from "../../stores";
 export type { AccessEvent };
 
-// AuditStore's two members only — PHI-access events. Lifecycle/CRM events and raw-object ownership
-// bookkeeping are app-specific concerns that stay in the app's identity-audit.ts (see stores.ts's
-// own docstring on AuditStore).
+// AuditStore's two members only — consent-scoped vault-access events. Lifecycle/CRM events and
+// raw-object ownership bookkeeping are app-specific concerns that stay in the app's
+// identity-audit.ts (see stores.ts's own docstring on AuditStore).
 
-// FTC Health Breach Notification Rule PHI-access/disclosure audit log. Records WHO (actor) accessed WHOSE (subject)
-// vault and WHY (action + consent_ref), so a breach can be scoped to affected individuals. NO PHI.
+// A generic actor/subject/action audit log for consent-scoped vault access — e.g., satisfies FTC
+// Health Breach Notification Rule PHI-disclosure logging for healthcare deployments, or analogous
+// breach-notification and access-audit obligations in other regulated domains. Records WHO
+// (actor) accessed WHOSE (subject) vault and WHY (action + consent_ref), so a breach can be
+// scoped to affected individuals. NO PHI.
 interface AccessEventRow {
   id: string;
   actor_account_id: string;

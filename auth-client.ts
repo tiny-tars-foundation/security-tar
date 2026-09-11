@@ -20,6 +20,7 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/browser";
 import { bytesToB64 as bytesToBase64, b64ToBytes as base64ToBytes } from "./base64";
+import type { ProviderKind } from "./stores";
 export { bytesToB64 as bytesToBase64, b64ToBytes as base64ToBytes } from "./base64";
 
 export const KDF_ITERATIONS = 200_000;
@@ -42,7 +43,7 @@ export function hexToBytes(hex: string): Uint8Array {
  *
  * Nearly every branch below threw `${what} failed: ${res.status}`, discarding a message the
  * endpoint had already composed for exactly this moment ("that recovery code has expired", "this
- * clinician already has access", "no access to this vault") and showing a patient a bare number
+ * provider already has access", "no access to this vault") and showing an owner a bare number
  * instead. These are the paths a person is on during the worst day they will have with this app, and
  * a status code tells them nothing about whether to retry, wait, or ask someone.
  *
@@ -327,7 +328,7 @@ export async function resumeSession(): Promise<{
   vaultId: string | null;
   r2Key: string | null;
   rotationPending: boolean;
-  providerKind: "clinician" | "support" | null;
+  providerKind: ProviderKind | null;
   ownerEnvelope: { wrappedDEK: string; ephemeralPublicKeyJwk: JsonWebKey } | null;
 } | null> {
   const res = await fetch("/api/auth/session/resume", { cache: "no-store" });
@@ -350,7 +351,7 @@ export async function addGoogleMethod(privateKey: CryptoKey, currentPassword?: s
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `add google failed: ${res.status}`);
 }
 
-export async function getMyAccount(): Promise<{ id: string; email: string | null; emailConfirmed: boolean; displayName: string; providerKind: "clinician" | "support" | null; unitSystem: "metric" | "imperial" | null }> {
+export async function getMyAccount(): Promise<{ id: string; email: string | null; emailConfirmed: boolean; displayName: string; providerKind: ProviderKind | null; unitSystem: "metric" | "imperial" | null }> {
   const res = await fetch("/api/account", { cache: "no-store" });
   if (!res.ok) throw await failed(res, "account fetch failed");
   return res.json();

@@ -1,7 +1,8 @@
 import { wrapDEKForPublicKey } from "./crypto";
 import { bytesToBase64, failed } from "./auth-client";
+import type { ProviderKind } from "./stores";
 
-// Provider escrow (patient side). A logged-in patient grants a provider access by wrapping
+// Provider escrow (owner side). A logged-in owner grants a provider access by wrapping
 // their in-memory DEK to the provider's public key client-side and posting the opaque envelope; the
 // server never sees a plaintext DEK. Revoke deletes the envelope + marks the link revoked.
 
@@ -9,7 +10,7 @@ export interface ProviderLinkView {
   linkId: string;
   providerAccountId: string;
   displayName: string;
-  kind: "clinician" | "support";
+  kind: ProviderKind;
   status: "invited" | "active" | "revoked";
   expiresAt: string | null;
   publicKeyJwk?: JsonWebKey | null; // present only for a pending (invited) support request

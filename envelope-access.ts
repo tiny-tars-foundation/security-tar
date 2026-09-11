@@ -8,7 +8,7 @@ export interface EnvelopeAccessSource {
   getVault(vaultId: string): Promise<VaultRow | null>;
 }
 export interface ProviderLinkSource {
-  getActive(patientAccountId: string, providerAccountId: string): Promise<ProviderLink | null>;
+  getActive(ownerAccountId: string, providerAccountId: string): Promise<ProviderLink | null>;
 }
 
 /**

@@ -26,7 +26,7 @@ export interface BreakGlassGrantStores {
 
 /**
  * Approves a pending support-role link: validates it's the approver's own pending request, clamps the
- * requested TTL, stamps a consent ref, optionally writes an envelope (patient approvals only — a
+ * requested TTL, stamps a consent ref, optionally writes an envelope (owner approvals only — a
  * provider approving a roster request owns nothing encrypted), flips the link active, and audits.
  */
 export async function grantBreakGlass(
@@ -43,7 +43,7 @@ export async function grantBreakGlass(
   }
 ): Promise<BreakGlassGrantResult> {
   const link = await stores.links.get(opts.linkId);
-  if (!link || link.patientAccountId !== opts.approverAccountId || link.role !== "support" || link.status !== "invited") {
+  if (!link || link.ownerAccountId !== opts.approverAccountId || link.role !== "support" || link.status !== "invited") {
     return { ok: false, error: "no_pending_link" };
   }
 
@@ -124,10 +124,10 @@ export interface BreakGlassRevokeStores {
 }
 
 /**
- * Ends a link early — either side may call this (the patient revoking, or the provider dropping it).
+ * Ends a link early — either side may call this (the owner revoking, or the provider dropping it).
  * Deletes the provider's envelope (if any) so no new read can unwrap the DEK, and marks the link
  * revoked. Idempotent: a second call re-deletes (no-op) and re-marks revoked (no-op); `auditAction` is
- * omitted for link kinds that don't carry a disclosure-audit obligation (clinician links).
+ * omitted for link kinds that don't carry a disclosure-audit obligation (primary links).
  */
 export async function revokeBreakGlass(
   stores: BreakGlassRevokeStores,
