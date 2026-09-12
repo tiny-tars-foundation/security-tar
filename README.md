@@ -14,28 +14,44 @@ Maintained by the [Tiny Tars Foundation](https://tinytars.foundation), a 501(c)(
 
 ## Why
 
-### The healthcare deployment this was built for
+### The HIPAA-adjacent deployment's vault
 
-This package was extracted from a health-records app, and that origin is worth stating plainly
-rather than hiding: it's a real, fully worked use case, not a footnote. Map its vocabulary onto
-this package's generic one and the fit is exact. The vault **owner** is a patient; a **provider**
-link is a treating clinician's standing access to that patient's record; a **support** link is a
-care-team member's time-boxed access, handled by `break-glass.ts`'s grant/check/revoke lifecycle
-so a temporary exception doesn't quietly become a permanent one; the audit log in
-`adapters/d1/audit.ts` is shaped to satisfy the FTC Health Breach Notification Rule's
-disclosure-logging requirement — who accessed whose record and why, so a breach can be scoped to
-affected individuals.
+This package was extracted from a health-records app built against HIPAA-adjacent constraints,
+and that origin is worth stating plainly: it's a real, fully worked use case, not a footnote.
+The fit is exact: the vault **owner** is the person whose record it is; a **provider** link is a
+treating professional's standing access to that record; a **support** link is a colleague's
+time-boxed access, handled by `break-glass.ts`'s grant/check/revoke lifecycle so a temporary
+exception doesn't quietly become a permanent one.
+
+And the fit isn't just structural — four of the package's primitives map onto four things a
+HIPAA-adjacent deployment specifically needs:
+
+#### Satisfies the FTC Health Breach Notification Rule
+
+The audit log in `adapters/d1/audit.ts` is shaped to satisfy the Rule's disclosure-logging
+requirement directly — who accessed whose record and why, so a breach can be scoped to affected
+individuals.
+
+#### Zero-knowledge storage
 
 `crypto.ts` gives that app a zero-knowledge vault — the storage operator holds ciphertext and
 never a key or usable plaintext, which matters when the payload is a medical record.
+
+#### Consent-based sharing
+
 `envelope-access.ts` gives it consent-based sharing — access is a per-principal, revocable
-wrapped-key grant, not a shared secret or a role flag, which is what "the patient controls who
-sees their record" actually requires at the implementation level. `break-glass.ts` gives it the
-piece hand-rolled HIPAA-adjacent systems get wrong most often: a time-boxed grant with the TTL
-clamp, self-expiry, and audit trail built in. None of this makes the package itself HIPAA-
-compliant — it's a primitive an adopter builds compliant handling on top of, not a compliance
-product in its own right — but the shape it ships is exactly the shape that adopter needs, not
-something assembled from unrelated parts after the fact.
+wrapped-key grant, not a shared secret or a role flag, which is what "the record's owner controls
+who sees it" actually requires at the implementation level.
+
+#### Time-boxed emergency access
+
+`break-glass.ts` gives it the piece hand-rolled HIPAA-adjacent systems get wrong most often: a
+time-boxed grant with the TTL clamp, self-expiry, and audit trail built in.
+
+None of this makes the package itself HIPAA-compliant — it's a primitive an adopter builds
+compliant handling on top of, not a compliance product in its own right — but the shape it ships
+is exactly the shape that adopter needs, not something assembled from unrelated parts after the
+fact.
 
 ### Beyond health
 
@@ -49,7 +65,7 @@ Concretely, beyond the healthcare case above:
 - **Outside counsel** reviewing a client's encrypted case files, access granted for the matter's
   duration and revoked when it closes.
 - **An accountant** getting temporary access to a household's financial records at tax time,
-  through the same time-boxed grant `break-glass.ts` gives a clinician.
+  through the same time-boxed grant `break-glass.ts` gives a treating professional.
 - **A corporate IT admin** granted standing access to an employee's HR file for the audit trail
   it creates, or temporary access during an offboarding review.
 - **A SaaS support agent** getting time-boxed access to a customer's account data to debug a
