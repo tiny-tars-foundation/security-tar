@@ -14,7 +14,7 @@ Maintained by the [Tiny Tars Foundation](https://tinytars.foundation), a 501(c)(
 
 ## Why
 
-### The HIPAA-adjacent deployment's vault
+### The HIPAA-adjacent vault
 
 This package was extracted from a health-records app built against HIPAA-adjacent constraints,
 and that origin is worth stating plainly: it's a real, fully worked use case, not a footnote.
